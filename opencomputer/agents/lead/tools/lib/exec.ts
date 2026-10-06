@@ -1,0 +1,62 @@
+import { execFile } from "node:child_process";
+
+/** What a finished command left behind. */
+export interface ExecResult {
+  code: number;
+  stdout: string;
+  stderr: string;
+}
+
+export interface ExecOptions {
+  cwd?: string;
+  /** Written to the command's standard input. */
+  input?: string;
+}
+
+export type Exec = (command: string, args: readonly string[], options?: ExecOptions) => Promise<ExecResult>;
+
+/** Runs a command on the session's computer and never throws on a non-zero exit. */
+export const realExec: Exec = (command, args, options = {}) =>
+  new Promise((resolve, reject) => {
+    const child = execFile(
+      command,
+      [...args],
+      {
+        cwd: options.cwd,
+        maxBuffer: 64 * 1024 * 1024,
+        // A credential prompt would hang the tool; fail instead.
+        env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GH_PROMPT_DISABLED: "1" },
+      },
+      (error, stdout, stderr) => {
+        if (error && typeof (error as NodeJS.ErrnoException).code === "string") {
+          reject(new Error(`${command} could not start: ${error.message}`));
+          return;
+        }
+        const code = error ? Number((error as { code?: unknown }).code ?? 1) || 1 : 0;
+        resolve({ code, stdout: String(stdout), stderr: String(stderr) });
+      },
+    );
+    if (options.input !== undefined) child.stdin?.end(options.input);
+  });
+
+/**
+ * Where the tools run. On the computer: real commands, clones under
+ * `/workspace/.kevin` (the workspace persists across turns, so a clone is a
+ * cache, design 019 §3), remotes on GitHub. Tests replace `exec` to answer
+ * `gh` themselves and point `remoteBase` at local bare repositories.
+ */
+export const runtime: { exec: Exec; cloneRoot: string; remoteBase: string } = {
+  exec: realExec,
+  cloneRoot: "/workspace/.kevin",
+  remoteBase: "https://github.com/",
+};
+
+/** Runs a command and throws with its output when it fails. */
+export async function must(command: string, args: readonly string[], options?: ExecOptions): Promise<string> {
+  const result = await runtime.exec(command, args, options);
+  if (result.code !== 0) {
+    const detail = (result.stderr || result.stdout).trim().split("\n").slice(-5).join("\n");
+    throw new Error(`${command} ${args.slice(0, 2).join(" ")} failed (exit ${result.code}): ${detail}`);
+  }
+  return result.stdout;
+}

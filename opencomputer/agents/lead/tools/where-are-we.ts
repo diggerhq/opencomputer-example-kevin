@@ -1,0 +1,179 @@
+import { defineTool } from "@opencomputer/agent";
+
+import { config } from "../config";
+import { deleteSubscriptions } from "./lib/api";
+import { agentRefs, blobUrl, checkRepo, defaultBranch, ghFile, ghJson, installationRepos } from "./lib/github";
+import { designPath, type KevinState, planPath, readHeaderVersion, readState } from "./lib/state";
+
+/** At most this many granted repos are searched when no repo is named. */
+const MAX_REPOS = 30;
+const BASE_LINE = /^\s*(?:[-*]\s+)?\**base\**\s*:\s*\**\s*`?([^\s`*]+)`?/im;
+
+type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
+
+interface Found {
+  repo: string;
+  slug: string;
+  plan: string;
+  state: KevinState;
+  planRepo: string;
+  planBranch: string;
+  refs: Array<{ branch: string; sha: string }>;
+}
+
+/**
+ * Finds this thread's work (design 019 §8 "Which work is this thread"): the
+ * `agent/*` refs of the repo (or of every granted repo), each candidate's plan
+ * read through the contents API, matched on the state's lead session id or
+ * thread id. O(open branches); no clone.
+ */
+async function find(sessionId: string, threadId: string | undefined, repos: string[]) {
+  const docs = config.docsRepo ? { repo: config.docsRepo, branch: await defaultBranch(config.docsRepo) } : undefined;
+  const slugsInUse: string[] = [];
+  for (const repo of repos) {
+    const refs = await agentRefs(repo);
+    for (const { branch } of refs) {
+      const slug = branch.slice("agent/".length);
+      if (slug.includes("--")) continue;
+      slugsInUse.push(slug);
+      const planRepo = docs?.repo ?? repo;
+      const planBranch = docs?.branch ?? branch;
+      const plan = await ghFile(planRepo, planPath(slug), planBranch);
+      if (plan === null) continue;
+      let state: KevinState | null;
+      try {
+        state = readState(plan);
+      } catch {
+        continue;
+      }
+      if (!state) continue;
+      if (state.leadSessionId === sessionId || (threadId !== undefined && state.threadId === threadId)) {
+        const found: Found = { repo, slug, plan, state, planRepo, planBranch, refs };
+        return { found, slugsInUse };
+      }
+    }
+  }
+  return { found: undefined, slugsInUse };
+}
+
+/** The design 019 §11 `where_are_we` result for found work. */
+async function describe(found: Found, sessionId: string): Promise<Record<string, Json>> {
+  const { repo, slug, plan, state, planRepo, planBranch, refs } = found;
+  const branch = `agent/${slug}`;
+  const base = plan.match(BASE_LINE)?.[1] ?? (await defaultBranch(repo));
+  const design = await ghFile(planRepo, designPath(slug), planBranch);
+  const planUrl = blobUrl(planRepo, planBranch, planPath(slug));
+  const docs: Record<string, Json> = {
+    ...(design !== null ? { design: blobUrl(planRepo, planBranch, designPath(slug)) } : {}),
+    plan: planUrl,
+    ...(/^##\s+Prompts\b/m.test(plan) ? { prompts: `${planUrl}#prompts` } : {}),
+  };
+
+  const [owner] = repo.split("/");
+  const pulls =
+    (await ghJson<Array<{ number: number; draft: boolean; merged_at: string | null; html_url: string }>>(
+      `repos/${repo}/pulls?head=${encodeURIComponent(`${owner}:${branch}`)}&state=all&per_page=1`,
+    )) ?? [];
+  const pull = pulls[0];
+
+  const streamRefs = refs.filter((ref) => ref.branch.startsWith(`${branch}--`));
+  const names = new Set<string>();
+  const streams: Json[] = [];
+  const merged = async (streamBranch: string) => {
+    if (!streamBranch || !streamRefs.some((ref) => ref.branch === streamBranch)) return false;
+    const compare = await ghJson<{ ahead_by: number }>(`repos/${repo}/compare/${branch}...${streamBranch}`);
+    return compare?.ahead_by === 0;
+  };
+  for (const stream of state.streams) {
+    names.add(stream.stream);
+    streams.push({
+      name: stream.stream,
+      branch: stream.branch,
+      merged: await merged(stream.branch),
+      ...(stream.sessionId ? { sessionId: stream.sessionId } : {}),
+      attempt: stream.attempt,
+      state: stream.state,
+    });
+  }
+  const forks: Json[] = [];
+  for (const ref of streamRefs) {
+    const name = ref.branch.slice(`${branch}--`.length);
+    if (name.startsWith("fork-")) {
+      // The fork's thread is in its own plan header (§9); fork mechanics wait for slack-ux P4.
+      forks.push({ branch: ref.branch, thread: "", sha: ref.sha });
+    } else if (!names.has(name)) {
+      streams.push({ name, branch: ref.branch, merged: await merged(ref.branch), attempt: 0, state: "unrecorded" });
+    }
+  }
+
+  const commits =
+    (await ghJson<Array<{ sha: string; commit: { message: string } }>>(
+      `repos/${repo}/commits?sha=${encodeURIComponent(branch)}&per_page=5`,
+    )) ?? [];
+
+  // Nothing runs → nothing should wake this session (work 040 "Delegate", GAP(K9) cost window).
+  let subscriptionDeleted = false;
+  if (state.subscriptionId && !state.streams.some((stream) => stream.state === "running")) {
+    subscriptionDeleted = (await deleteSubscriptions(state.leadSessionId || sessionId)) > 0;
+  }
+
+  return {
+    slug,
+    repo,
+    branch,
+    base,
+    version: Math.max(state.version, readHeaderVersion(plan)),
+    docs,
+    ...(pull
+      ? { pr: { number: pull.number, draft: pull.draft, merged: pull.merged_at !== null, url: pull.html_url } }
+      : {}),
+    streams,
+    forks,
+    lastCommits: commits.map((commit) => ({ sha: commit.sha, subject: commit.commit.message.split("\n")[0] ?? "" })),
+    state: state as unknown as Json,
+    ...(subscriptionDeleted ? { subscriptionDeleted } : {}),
+  };
+}
+
+/**
+ * Where this thread's work stands, from GitHub alone (design 019 §8, §11).
+ * Input `{ sessionId, threadId? }`: the session id defaults to the calling
+ * session's; `repo` narrows the search (else every granted repo, ≤30).
+ * A code tool running `gh api` on the computer; whether it sees the token is
+ * I1 (work 040), still to run live — on failure the same JSON comes from a
+ * shell procedure in `process/`.
+ */
+export const whereAreWe = defineTool({
+  name: "where_are_we",
+  description:
+    "Where this thread's work stands, read from GitHub (refs and the plan's kevin-state block; no clone). Call it first on every turn " +
+    "except the brief. Returns { slug?, repo?, branch?, base, version, docs: { design?, plan?, prompts? }, pr?, " +
+    "streams: [{ name, branch, merged, sessionId?, attempt, state }], forks, lastCommits, state? }; " +
+    "no slug = no work found for this session/thread (then slugsInUse lists taken slugs when repo was given).",
+  input: {
+    type: "object",
+    properties: {
+      sessionId: { type: "string", description: "Omit: your own session" },
+      threadId: { type: "string", description: "The thread id when the context gives one" },
+      repo: { type: "string", description: "owner/name, when known (it is after the brief); omitted → every granted repo is searched" },
+    },
+    additionalProperties: false,
+  },
+  async run({ input, sessionId: own }) {
+    const sessionId = typeof input.sessionId === "string" && input.sessionId ? input.sessionId : own;
+    const threadId = typeof input.threadId === "string" && input.threadId ? input.threadId : undefined;
+    const repos = input.repo === undefined ? (await installationRepos()).slice(0, MAX_REPOS) : [checkRepo(input.repo)];
+    const { found, slugsInUse } = await find(sessionId, threadId, repos);
+    if (found) return describe(found, sessionId);
+    return {
+      ...(input.repo === undefined ? {} : { repo: repos[0] as string }),
+      base: input.repo === undefined ? "" : await defaultBranch(repos[0] as string),
+      version: 0,
+      docs: {},
+      streams: [],
+      forks: [],
+      lastCommits: [],
+      slugsInUse,
+    };
+  },
+});
