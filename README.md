@@ -1,18 +1,23 @@
 # Kevin: an engineering teammate in Slack
 
-Mention Kevin with one sentence; it comes back with a brief, then a design,
-a plan, parallel builders, an independent review and a draft pull request —
-each step one short message you answer in a word, and only as many steps as
-the work deserves. A one-line fix skips the documents, not the gates.
+Mention Kevin in a thread with one sentence and work with it the way you
+would with a colleague: it comes back with a brief you correct in a word,
+then a design, then a plan, and only then code — built in parallel,
+reviewed independently, and handed back as a draft pull request written to
+be read in one pass. A one-line fix skips the documents, not the gates.
 
-The idea it tests: a coding agent's only correction point is usually the
-PR, the most expensive one. Kevin puts the corrections where they are
-cheap, and stays deliberately lazy: it holds at a stage until the biggest
-unknowns there are settled, and asks before it builds.
+**How it differs from a background coding agent.** You are not handing off
+a task and waiting for a PR. The work takes shape in stages, each one a
+short message that shows the whole thing at its current resolution — like
+a progressive image: blurry and cheap to correct first, sharp and expensive
+last. You steer where steering is cheap; the agent builds once, against a
+plan you have already agreed to.
 
-It is an [OpenComputer](https://docs.opencomputer.dev/agents/overview)
-project: three agents, a folder of process text, five tools. Slack is the
-interface, GitHub is the store; nothing else is deployed.
+**What you get.**
+- A conversation, not a queue: every step is one message you answer in a word.
+- Documents that stay: the design and the plan land in your repo beside the code.
+- Parallel builders with fresh contexts, an independent review, and a PR description that respects your time.
+- Your process, in files you can read and change: three agents, a folder of process text, five tools, on [OpenComputer](https://docs.opencomputer.dev/agents/overview). Slack is the interface, GitHub is the store; nothing else is deployed.
 
 ## What it looks like
 
@@ -52,7 +57,7 @@ version; anything else is conversation.
 - **State is git.** Nothing is kept on a computer between turns. `where_are_we` rebuilds the picture from branches, documents, the PR and a `kevin-state` block in the plan at every turn; `status?` works a week later.
 - **Fan-out is the platform API.** `delegate` creates implementer sessions through an HTTP connection carrying the project secret and subscribes the lead to their outcomes; each finished stream arrives as an input. The reviewer is reached with `consult`, whose answer arrives as the lead's next input.
 - **Tools by input source.** The agent function runs before any tool, so it cannot know the stage; it knows where the input came from. A builder's outcome may record, merge and re-dispatch, never open the PR or call the reviewer.
-- **Guidance, not a harness.** `process/` explains the why, the concepts and the boundaries; message shapes are reference material the model fits to the work. The product improves as the models do.
+- **Guidance, not a harness.** `process/` explains the why, the concepts and the boundaries; message shapes are reference material the model fits to the work, so it gets better as the models do.
 
 ## Platform features it exercises
 
