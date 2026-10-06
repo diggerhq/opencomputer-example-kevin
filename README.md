@@ -1,21 +1,25 @@
 # Kevin: product development agent for Slack
 
-Mention Kevin with one sentence in a Slack thread. It answers with a brief
-and a row of buttons; each click moves the work one stage on, up to a draft
-pull request.
+A [serverless agent on OpenComputer](https://docs.opencomputer.dev/agents/overview)
+that takes a piece of work from one sentence in a Slack thread to a reviewed
+pull request, one stage at a time.
 
-- **What it is.** A team of agents behind one Slack bot that takes a piece of work from an idea to a reviewed pull request: brief, design, plan, build, review, PR. Each stage is one short message and one click.
-- **Why.** The first ask holds a fraction of what should be built; the rest is found along the way. A coding agent that runs the prompt meets its first correction at the PR, the most expensive place to make one. Kevin shows the whole piece of work at each stage, blurry and cheap to correct first, sharp and expensive last, so steering happens early and code is written once, against an agreed plan.
-- **How.** A lead owns the thread and the documents; builders each take one stream of the plan in parallel, on their own computers and branches; a reviewer reads the result cold. The design and the plan land in the repo beside the code.
+The first ask is never the whole story, and a coding agent that runs with it
+meets its first correction at the PR. Kevin shows the whole piece of work at
+every stage (a brief, a design, a plan), blurry and cheap to change first,
+sharp and expensive last, and moves on when you click. Builders then write
+the code in parallel against the agreed plan, a reviewer reads it cold, and
+the pull request arrives with a description meant to be read once.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/how-it-works-dark.svg">
   <img alt="Stages left to right (brief, design, plan, build, review, PR); you, the lead, the builders, the reviewer and GitHub top to bottom. One click from you starts each stage; the lead writes the design and plan to the repo, fans builders out only at build and merges what they return, consults the reviewer on the build (and on the design when asked), and opens the PR." src="docs/how-it-works-light.svg" width="100%">
 </picture>
 
-- Controlled from the thread: a button per option, a typed reply when a button is not enough, documents linked where they land.
-- A one-line fix skips the documents, not the gates.
-- The process is files: three agents, a folder of process text, five tools, on [OpenComputer](https://docs.opencomputer.dev/agents/overview). Slack is the interface, GitHub the store; nothing else is deployed.
+Slack is the interface and GitHub the store; the design and the plan land in
+the repo beside the code. Three agents, a folder of process text and five
+tools; nothing else is deployed. A one-line fix skips the documents, not the
+gates.
 
 ## What it looks like
 
