@@ -15,7 +15,14 @@ export interface ExecOptions {
 
 export type Exec = (command: string, args: readonly string[], options?: ExecOptions) => Promise<ExecResult>;
 
-/** Runs a command on the session's computer and never throws on a non-zero exit. */
+/**
+ * Runs a command on the session's computer and never throws on a non-zero exit.
+ * Commands run here do not refresh the GitHub token: the platform installs it
+ * when the computer starts and refreshes it only when a shell command is
+ * dispatched, so after a long gap the lead runs one trivial shell command
+ * before `integrate` or `open_pr`, or a long-idle computer may hold an
+ * expired token.
+ */
 export const realExec: Exec = (command, args, options = {}) =>
   new Promise((resolve, reject) => {
     const child = execFile(
