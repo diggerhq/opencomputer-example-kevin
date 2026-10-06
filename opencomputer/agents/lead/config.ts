@@ -6,9 +6,9 @@
  */
 export const config = {
   /** The cloud project id, for management-API routes. */
-  projectId: "",
+  projectId: "prj_5e3b7f26e8b64079a91e92701750be40",
   /** The project's slug = the primary agent's cloud id; the others are `<agentPrefix>--<local id>`. */
-  agentPrefix: "",
+  agentPrefix: "kevin",
   /** The environment sessions and subscriptions are created in. */
   environment: "development",
   /** When set (`owner/name`), documents go to this repo's default branch instead of the code repo's `agent/<slug>`. */
