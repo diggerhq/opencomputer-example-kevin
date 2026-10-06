@@ -1,0 +1,41 @@
+/**
+ * Shapes exchanged between agents (design 019 §11 contracts): the
+ * assignment, the implementer report, the reviewer brief and report, the
+ * lead's judgement and the build record entry.
+ */
+
+/** Tool names as the lead's instructions call them; S2 registers tools under these ids. */
+export const TOOL_NAMES = {
+  whereAreWe: "where_are_we",
+  delegate: "delegate",
+  commitDocument: "commit_document",
+  integrate: "integrate",
+  openPr: "open_pr",
+  consult: "consult",
+} as const;
+
+// 019 §11 "assignment"
+export const ASSIGNMENT_SHAPE =
+  '{ "kind": "build" | "spike" | "investigate", "slug", "repo", "stream", "branch"?, "base", "attempt", "files": [], "doneWhen", "checks", "designUrl"?, "planUrl"? }';
+
+// 019 §11 "implementer report"
+export const IMPLEMENTER_REPORT_SHAPE =
+  '{ "landed": [{ "sha", "subject" }], "checks": { "status": "pass" | "fail", "tail" }, "blocked": [], "planAmendments": [] }';
+
+// 019 §11 "reviewer brief"
+export const REVIEWER_BRIEF_SHAPE =
+  '{ "artifact": "design" | "build", "slug", "repo", "docsRepo"?, "branch"?, "base", "designUrl", "planUrl"? }';
+
+// 019 §11 "reviewer report"
+export const REVIEWER_REPORT_SHAPE =
+  '{ "verdict": "ship" | "fix-first", "findings": [{ "id", "severity", "file"?, "line"?, "scenario", "change" }] }';
+
+// 019 §11 "lead judgement"
+export const LEAD_JUDGEMENT_SHAPE = '{ "id", "verdict": "folded" | "declined" | "deferred", "note" }';
+
+// 019 §11 "build record entry"
+export const BUILD_RECORD_ENTRY = "### <date> — <stream>@<attempt>: landed / blocked / amended / judged";
+
+// 019 §10, §5: the reviewer judges the contract above a Prompts section
+export const PROMPTS_RULE =
+  "A document's Prompts section is provenance, not specification: it records the messages that shaped the document. Judge the contract above it; never raise a finding because the document departs from a quoted message.";
