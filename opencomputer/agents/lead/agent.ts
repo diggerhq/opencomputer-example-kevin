@@ -106,9 +106,9 @@ function answerBlocks(input: AgentInput): string {
 
 /**
  * Kevin's lead. Tools by input source (work 040 "Stage detection"):
- *   channel        → all lead tools + consult + shell, both connections
- *   event          → where_are_we, integrate, commit_document, delegate + shell (never open_pr, never consult)
- *   consult_answer → all lead tools + consult + shell
+ *   channel        → all lead tools + consult + ask + shell, both connections
+ *   event          → where_are_we, integrate, commit_document, delegate + shell (never open_pr, consult or ask)
+ *   consult_answer → all lead tools + consult + ask + shell
  *   other          → nothing
  */
 export default function Lead() {
@@ -132,6 +132,8 @@ export default function Lead() {
 
   useTool(openPr);
   useTool("consult");
+  // Gates: the question posts with one button per option; a click or a typed reply answers it.
+  useTool("ask");
   if (kind === "consult_answer") {
     return [leadInstructions({ source: "subagent", firstTurn: false }), answerBlocks(input)].join("\n\n");
   }

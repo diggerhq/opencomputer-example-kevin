@@ -9,6 +9,7 @@ import { BRIEF_TURN } from "../opencomputer/agents/lead/process/lead";
 import { render, slackMention } from "./helpers";
 
 const ALL_TOOLS = [
+  TOOL_NAMES.ask,
   TOOL_NAMES.commitDocument,
   TOOL_NAMES.consult,
   TOOL_NAMES.delegate,

@@ -13,6 +13,7 @@ export const TOOL_NAMES = {
   integrate: "integrate",
   openPr: "open_pr",
   consult: "consult",
+  ask: "ask",
 } as const;
 
 // 019 §11 "assignment"

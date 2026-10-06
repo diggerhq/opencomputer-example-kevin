@@ -62,7 +62,7 @@ ${labelLines()}
 **health-alias** · brief · v1
 \`GET /health/\` 404s; alias it to \`/health\` in \`src/server.js\`, with a test.
 ---
-**Next:** \`build now\` · \`revise\` — mention me in replies
+→ then \`ask("Next?", ["build now", "revise"])\`; once per thread add "typed replies need an @mention"
 - A feature brief:
 **csv-export-quoting** · brief · v1
 
@@ -72,7 +72,7 @@ ${labelLines()}
 **Steps** design → plan → build → review → PR; two streams
 
 ---
-**Next:** \`design\` · \`revise\` · \`build now\` — mention me in replies`;
+→ then \`ask("Next?", ["design", "revise", "build now"])\`; once per thread add "typed replies need an @mention"`;
 
 // 019 §6 design, plan and PR shapes; §10 Prompts; work 040 "Plan state"
 export const DOCUMENT_SHAPES = `# Documents (reference)

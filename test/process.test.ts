@@ -88,7 +88,7 @@ test("contract: every tool the lead text names is a registered tool id", () => {
 
 test("mechanics: mention line, held inputs around consult, no question after a dispatch, outcome turns post", () => {
   const text = leadInstructions(CHANNEL);
-  assert.match(text, /mention me in replies/);
+  assert.match(text, /typed replies need an @mention/);
   assert.match(text, /consult/);
   assert.match(text, /held/);
   assert.match(text, /never while implementers run/);
@@ -181,7 +181,7 @@ test("shapes: presented as reference to fit, last in the text, with a trivial ex
   assert.match(SHAPES, /fit them to the work/);
   assert.match(SHAPES, /A trivial change gets a trivial message/);
   const trivial = SHAPES.slice(SHAPES.indexOf("**health-alias**"));
-  const lines = trivial.slice(0, trivial.indexOf("mention me in replies")).split("\n").filter(Boolean);
+  const lines = trivial.slice(0, trivial.indexOf("typed replies need an @mention")).split("\n").filter(Boolean);
   assert.ok(lines.length <= 4, `the two-line fix example is ${lines.length} lines`);
   for (const input of [BRIEF, CHANNEL, ANSWER]) {
     const text = leadInstructions(input);
@@ -195,7 +195,7 @@ test("shapes: presented as reference to fit, last in the text, with a trivial ex
 test("size: guidance ~1 200 words per lead turn kind; with the reference shapes ≤1 700", () => {
   for (const [kind, input] of Object.entries(KINDS)) {
     const text = leadInstructions(input);
-    assert.ok(words(guidance(text)) <= 1_300, `${kind}: guidance ${words(guidance(text))} words`);
+    assert.ok(words(guidance(text)) <= 1_350, `${kind}: guidance ${words(guidance(text))} words`); // the ask gate mechanics cost ~50 words
     assert.ok(words(text) <= 1_700, `${kind}: ${words(text)} words`);
   }
 });
