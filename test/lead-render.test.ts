@@ -18,7 +18,7 @@ const ALL_TOOLS = [
   TOOL_NAMES.whereAreWe,
 ].sort();
 const EVENT_TOOLS = [TOOL_NAMES.commitDocument, TOOL_NAMES.delegate, TOOL_NAMES.integrate, "sandbox_exec", TOOL_NAMES.whereAreWe].sort();
-const BOTH_CONNECTIONS = ["github", "opencomputer"];
+const BOTH_CONNECTIONS = ["github", "management-api"];
 
 /** A mention inside an existing thread, once the ingress names the thread (blue P1 (b)). */
 function threadReply(text: string): AgentInput {
