@@ -3,9 +3,6 @@ import { useConnection, useInput, useModel, useTool, type DataValue } from "@ope
 import { github } from "./connections/github";
 import { implementerInstructions } from "./process/instructions";
 
-/** Puts the GitHub connection in the deployment manifest (connections deploy by import). */
-export const CONNECTIONS = [github] as const;
-
 /**
  * The computer command tool. Workerd registers it as both `shell` and
  * `sandbox_exec`;

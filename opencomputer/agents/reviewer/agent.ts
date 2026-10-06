@@ -4,9 +4,6 @@ import { github } from "./connections/github";
 import { reviewerInstructions } from "./process/instructions";
 import { ROLES } from "./process/roles";
 
-/** Puts the read-only GitHub connection in the deployment manifest (connections deploy by import). */
-export const CONNECTIONS = [github] as const;
-
 /** The reviewer brief: the fenced JSON inside the consult prompt. */
 export interface ReviewerBrief {
   artifact: "design" | "build";
