@@ -1,11 +1,11 @@
-# Kevin: staged coding agent for Slack
+# Kevin: product development agent for Slack
 
 One sentence in a Slack thread; Kevin answers with a brief. Reply in a
 word and it moves on: design, plan, then code — built in parallel,
 reviewed independently, returned as a draft pull request. A one-line fix
 skips the documents, not the gates.
 
-**Not a background agent.** Nothing is handed off and awaited. The work
+**Not a background coding agent.** Nothing is handed off and awaited. The work
 takes shape in stages, each one a short message showing the whole thing at
 its current resolution — blurry and cheap to correct first, sharp and
 expensive last. Steering happens where it is cheap; code is written once,
