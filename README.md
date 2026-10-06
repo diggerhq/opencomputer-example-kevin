@@ -1,134 +1,199 @@
 # Kevin: product development agent for Slack
 
-Takes a piece of work from one sentence in a Slack thread to a reviewed pull
-request, one stage at a time.
+Kevin works through the approach with you before writing code. Refine the
+brief, design and plan in the thread; separate agents then implement and
+review the change, returning a draft pull request. Small fixes can go
+straight to building.
 
-The first ask is never the whole story, and a coding agent that runs with it
-meets its first correction at the PR. Kevin shows the whole piece of work at
-every stage (a brief, a design, a plan), blurry and cheap to change first,
-sharp and expensive last, and moves on when you click. Builders then write
-the code in parallel against the agreed plan, a reviewer reads it cold, and
-the pull request arrives with a description meant to be read once.
+It runs as one [OpenComputer serverless agents](https://docs.opencomputer.dev/agents/overview)
+project, with Slack for conversation and GitHub for documents and code.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/how-it-works-dark.svg">
-  <img alt="Stages left to right (brief, design, plan, build, review, PR); you, the lead, the builders, the reviewer and GitHub top to bottom. One click from you starts each stage; the lead writes the design and plan to the repo, fans builders out only at build and merges what they return, consults the reviewer on the build (and on the design when asked), and opens the PR." src="docs/how-it-works-light.svg" width="100%">
+  <img alt="Kevin's workflow: you steer the brief, design and plan; the lead coordinates builders and a reviewer, then opens a pull request." src="docs/how-it-works-light.svg" width="100%">
 </picture>
 
-You drive it from the thread with buttons, or a reply when a button isn't
-enough. The design and the plan are committed to the repo next to the code;
-a one-line fix skips them and goes from the brief straight to the build.
-Kevin is three agents and a folder of process text, built with
-[OpenComputer serverless agents](https://docs.opencomputer.dev/agents/overview),
-with nothing else to deploy.
+**Experimental:** brief, status and design preview verified live on
+2026-10-06. The full build → review → PR path still needs an end-to-end run.
 
-## What it looks like
+## In a thread
 
-> **you:** @Kevin CSV export in acme-service breaks when a customer's name has a comma. Make it safe for any name.
+An illustrative exchange:
+
+> **You:** @Kevin CSV export in acme-service breaks when a customer's name has a comma.
 >
-> **Kevin:** **csv-export-quoting** · brief · v1
+> **Kevin:** I'll check the writer and parser, then propose the change and its tests. Keep the current CSV format?
 >
-> **What** quote fields that need it in `GET /customers.csv`; parse what the writer writes
-> **Why** "Smith, Jr., John" shifts its row by two columns today
-> **In** `src/csv.js`, `src/server.js`, tests · **Out** other formats, the customer shape
-> **Unknowns** L1 names with newlines too? · L2 other callers of `parseCsv`
-> **Steps** design → plan → build → review → PR (two files; your conventions want a design)
+> [ design ] [ build now ] [ revise ]
 >
-> Next? [ design ] [ build now ] [ revise ]
+> **You:** @Kevin Yes. Handle quotes and newlines too, but keep the parser's public API unchanged.
 
-Every message that carries the work starts with the slug, stage and
-version; anything else is conversation. The buttons are the question; a
-typed reply (with an @mention) answers it just as well.
+Kevin revises the approach before building. Once approved, the design and
+plan land in `.agents/design/` and `.agents/work/` on `agent/<slug>`, with
+links posted to the thread. The plan assigns independent files and checks
+to each builder; their branches merge into that working branch.
 
-## The stages
+Builders report back as they finish. When all have landed, mention
+`@Kevin review` to start the review. Kevin assesses the findings and shows
+the proposed PR description; **open** creates the draft, **ready** marks it
+ready for review. You merge.
 
-| Stage | What Kevin does | You |
-| --- | --- | --- |
-| Brief | restates the ask: what, why, in, out, open unknowns, the steps this work needs; at most two questions | correct it, or `design` / `build now` |
-| Design | reads the code, previews the design; on `go` writes `.agents/design/<slug>.md` on a branch and links it; open decisions come as a numbered sheet | `go`, decisions by number, `review`, or `revise` |
-| Plan | previews the streams (one builder's slice: files, done-when), order and checks; on `go` writes `.agents/work/<slug>.md` | `go`, then `build` |
-| Build | one builder per stream, each on its own branch and computer; merges each as it lands and posts a line | `status?` any time |
-| Review | an independent reviewer reads the branch against the design; Kevin judges each finding and shows the verdict with the PR preview | `open` |
-| PR | opens a draft pull request with a description made to be read once | `ready`; you merge |
-| Live | on your word or a merged PR: what shipped, what was deferred, what to watch | the next piece, in a new thread |
+Buttons answer Kevin's questions without a mention. Typed replies need
+`@Kevin`, including `@Kevin status?`. Use a new thread for another piece of
+work.
 
-## How it works
+## The agents
 
-- **Agents.** The lead talks to you, writes the documents and merges branches; it never writes product code. Each builder gets one stream of the plan and none of the conversation, so it builds what the plan says rather than what was said along the way. The reviewer reads the design or the merged branch without seeing the thread.
-- **State.** Each turn starts by reading the work back from GitHub: the branches, the documents, the PR, and a small JSON block in the plan (`kevin-state`) that records the builder sessions. The lead's clone on its computer is only a cache. That is why `status?` still works a week later.
-- **Delegation.** `delegate` starts builder sessions through the OpenComputer API with a project API key stored as a secret, and subscribes the lead to their results. When a builder finishes, its report reaches the lead as a new input. The lead asks the reviewer with `consult` and gets the answer the same way.
-- **Questions.** At the end of a stage the lead calls `ask` with the options. Slack shows them as buttons, and the click, or a typed reply, comes back as the next input.
-- **Tool selection.** The agent function runs before any tool, so it can't know the stage, only where the input came from. When a builder's report comes in, the lead can record it, merge and re-dispatch, but it can't open the PR, call the reviewer or ask you anything.
-- **Process text.** `process/` explains the method and its limits to the model in prose. The message formats in it are examples the model adapts, so a two-line fix gets a two-line reply.
+Kevin has three [agent definitions](https://docs.opencomputer.dev/agents/projects)
+in [`project.ts`](opencomputer/project.ts). Each defines a model, tools and
+instructions. A [session](https://docs.opencomputer.dev/agents/sessions) is
+a conversation with one of those agents: each Slack thread has a lead
+session, and each builder assignment starts a separate implementer session.
 
-## Platform features it exercises
-
-| Feature | Where |
-| --- | --- |
-| Slack connection: thread = session, sender identity per input, questions as buttons | dashboard bot, `lead/agent.ts` |
-| GitHub App connection with per-agent permissions (write for builders, read for the reviewer) | `*/connections/github.ts` |
-| HTTP connection with a managed secret attached at the edge | `lead/connections/opencomputer.ts` |
-| Management API from inside an agent: sessions, turns, event subscriptions | `lead/tools/lib/api.ts`, `delegate.ts` |
-| `ask`: a question the person answers by button or reply | `lead/agent.ts`, `process/lead.ts` |
-| `consult`: one agent asks another in the same project | `lead/agent.ts`, `reviewer/agent.ts` |
-| Code tools running on the session's computer (`git`, `gh`) | `lead/tools/*.ts` |
-| Tool selection per render from the input | `lead/agent.ts` |
-| One project, three agents, two models; per-agent bundles with a generated shared folder | `opencomputer/project.ts`, `scripts/generate.ts` |
-
-## Quick start
-
-Node.js 22; `@opencomputer/cli` ≥ 0.7.16; rights to install a Slack app and the OpenComputer GitHub App.
-
-1. `npm install && npm run check` — nothing here needs the platform.
-2. `npx opencomputer login && npx opencomputer link --create-project kevin`.
-3. Put the printed project id and `kevin` into [`config.ts`](opencomputer/agents/lead/config.ts).
-4. `npm run deploy` (generate + deploy; three agents, Development).
-5. `npx opencomputer github connect`; install the App on the repos Kevin may touch.
-6. Dashboard → project **kevin** → **Development** → Connections → **lead** row → **Create Slack bot**; `/invite @Kevin` in a channel.
-7. Create a project-scoped API key; put `OPENCOMPUTER_API_KEY=<key>` in `opencomputer/.env.local`; `npm run secret`.
-8. Optional: `.agents/conventions.md` in your repo ([template](templates/conventions.md)) says what ships directly and what needs a design.
-9. `@Kevin <one sentence>`.
-
-## Running it
-
-- **Cost.** A two-stream feature runs four model sessions (two Opus builders on their own computers, two Fable); the dashboard shows each.
-- **Stop.** A running builder cannot be interrupted; say stop and Kevin applies it at that builder's next report.
-- **Blocked.** A builder that cannot finish says so; Kevin tells you and re-dispatches on your word.
-- **Quiet periods.** A review takes up to ten minutes with nothing posted; messages sent meanwhile are held and answered with the verdict.
-- **Slack limits.** Typed replies reach Kevin only with an @mention (clicks need none); a thread has one owner.
-- **When it breaks.** `npx opencomputer session list | inspect <id> | logs --session <id>`. A session whose computer failed to start keeps failing: start a new thread.
-- **Production.** `npx opencomputer deploy --alias production`, a Slack bot on the Production row, `environment: "production"` in `config.ts` before `npm run secret`.
-
-## Adapting it
-
-- **Process:** `.agents/conventions.md` in the target repo.
-- **Voice and method:** [`process/`](process/) — edit the source; `npm run generate` copies it into each agent (the copies say so on line 1).
-- **Capabilities:** [`lead/tools/`](opencomputer/agents/lead/tools/), selected in `agent.ts`.
-- **Models:** one `useModel` line per agent. **Docs elsewhere:** `docsRepo` in `config.ts`.
-
-## Status
-
-Verified live on 2026-10-06 (Development, diggerhq Slack): brief, `status?`,
-design preview; the lead's GitHub tool on the platform's computers.
-Buttons shipped on the platform the same day and Kevin uses them from
-this version; build, review and PR are built and tested but have not yet
-run end to end in a thread. `consult` is a platform tool not yet in the
-public docs; if unavailable, Kevin says the review could not run. Platform
-gaps met while building are in [`DX-NOTES.md`](DX-NOTES.md).
-
-## Layout
-
-```
-opencomputer/project.ts            kevin: lead, implementer, reviewer
-opencomputer/agents/lead/          agent.ts · config.ts · connections/{github,opencomputer}.ts
-                                   tools/{where-are-we,delegate,commit-document,integrate,open-pr}.ts
-opencomputer/agents/implementer/   agent.ts · connections/github.ts (write)
-opencomputer/agents/reviewer/      agent.ts · connections/github.ts (read)
-process/                           the process text (source); each agent's process/ is generated
-scripts/                           generate.ts (copy + --check) · set-secret.ts (npm run secret) · diagram.ts (npm run diagram)
-docs/                              how-it-works-{light,dark}.svg (generated by diagram.ts)
-templates/conventions.md           for target repositories
-test/                              renders with authored inputs; tools against stubbed fetch / a local repo
+```ts
+export default { name: "kevin", agents: ["lead", "implementer", "reviewer"] };
 ```
 
-`npm run check` = generate --check · typecheck · tests · doctor.
+- **[Lead](opencomputer/agents/lead/agent.ts) — Fable.** Keeps the conversation,
+  writes the documents and integrates branches. It owns the approach; its
+  instructions leave product code to the builders.
+- **[Implementer](opencomputer/agents/implementer/agent.ts) — Opus.** Gets
+  one assignment and its own computer and branch. Builders read the agreed
+  documents, implement and run checks without inheriting discarded ideas
+  from the conversation. Independent assignments run in parallel.
+- **[Reviewer](opencomputer/agents/reviewer/agent.ts) — Fable.** Reads the
+  artifacts without the conversation, judging what was written rather than
+  what the lead intended. Its [GitHub connection](opencomputer/agents/reviewer/connections/github.ts)
+  has read permissions; its instructions prohibit local writes and running tests.
+
+An agent function selects a model, tools and connections, then returns
+instructions. Here is the implementer's entry point, with imports and
+helpers omitted:
+
+```ts
+export default function Implementer() {
+  useModel("anthropic/claude-opus-5.5");
+  const parsed = parseAssignment(useInput().payload);
+  if (!parsed.ok) {
+    return [implementerInstructions(), renderRefusal(parsed.problems)]
+      .join("\n\n");
+  }
+  useTool("sandbox_exec");
+  useConnection(github);
+  return [implementerInstructions(), renderAssignment(parsed.assignment)]
+    .join("\n\n");
+}
+```
+
+OpenComputer runs the [model and tool loop](https://docs.opencomputer.dev/agents/hooks),
+handles Slack delivery and starts computers as needed. There is no webhook
+server, job queue or application database to operate. Kevin's
+[`delegate`](opencomputer/agents/lead/tools/delegate.ts) tool creates builder
+sessions through the API and subscribes the lead to their outcomes. A
+completed builder wakes the lead with its report; `consult` requests a
+review, and `ask` posts the Slack buttons.
+
+The lead selects tools by input source: builder reports can trigger
+integration, but review and PR approval require a person to continue the
+thread. OpenComputer stores conversations and session history. GitHub stores
+the design, plan, code and builder session IDs (`kevin-state` in the plan).
+The lead reads remote state on follow-ups; its local clone is a cache.
+GitHub App permissions differ per agent. The lead's API key is attached
+to requests by a managed HTTP connection, rather than exposed to the model.
+
+## Run your own
+
+Requires Node.js 22, an OpenComputer account, and permission to install apps
+in your Slack workspace and GitHub repositories. Packages are pinned by
+the lockfile.
+
+1. Clone and create the OpenComputer project:
+
+   ```bash
+   git clone https://github.com/diggerhq/opencomputer-example-kevin.git
+   cd opencomputer-example-kevin
+   npm ci
+   npx opencomputer login
+   npx opencomputer link --create-project kevin
+   ```
+
+2. In [`config.ts`](opencomputer/agents/lead/config.ts), replace `projectId`
+   with the printed ID and set `agentPrefix` to your project's slug (`kevin`
+   for the command above). Keep `environment: "development"`.
+
+3. Create a dedicated key in the dashboard's **API Keys** page. Kevin uses
+   it to start sessions and subscribe to results. Dashboard keys have
+   organization-wide access; storing one as a project secret does not
+   narrow its scope. Save it in the gitignored `opencomputer/.env.local`:
+
+   ```dotenv
+   OPENCOMPUTER_API_KEY=<your-key>
+   ```
+
+   Upload the secret, check the project and deploy all three agents:
+
+   ```bash
+   npm run secret
+   npm run check
+   npm run deploy
+   ```
+
+4. Connect GitHub and select the repositories Kevin may work on:
+
+   ```bash
+   npx opencomputer github connect
+   ```
+
+5. In the dashboard, open **kevin → Development → Connections → lead →
+   Create Slack bot**. Follow the [Slack setup](https://docs.opencomputer.dev/agents/slack)
+   to create and authorize the bot using an App configuration access token.
+   In your channel, `/invite @Kevin`, then mention it with a request and
+   repository name. Its first response is a brief, before any code changes.
+
+## Make it yours
+
+- **Repository rules:** add `.agents/conventions.md` to the target repo
+  ([template](templates/conventions.md)) to say which changes need a design,
+  which can ship directly, and which checks to run.
+- **Method and voice:** edit [`process/`](process/). These are instructions
+  and examples the model adapts to the work, not a fixed sequence of forms.
+  `npm run generate` copies this source into each agent's bundle.
+- **Models and tools:** edit each `agent.ts` and the lead's
+  [`tools/`](opencomputer/agents/lead/tools/). `maxImplementers` defaults to seven.
+- **Documents elsewhere:** set `docsRepo` in `config.ts` to write documents
+  to a separate repository's default branch.
+
+Run `npm run check` and `npm run deploy` after changes. Deployment updates
+the Development versions; existing sessions keep their deployed version.
+Start a new Slack thread to try the updated lead.
+
+For Production, set `environment: "production"` **before** running
+`npm run secret` and `npm run deploy -- --alias production`, then connect
+a separate Slack bot on the project's Production lead row.
+
+## Limits and debugging
+
+- **Stop is cooperative:** Kevin records the request and acts on the
+  builder's next report; it does not interrupt a running command.
+- **Reviews can be quiet for up to ten minutes.** Messages sent meanwhile
+  are held for the lead's next reply. `consult` is not yet publicly documented;
+  Kevin reports when review is unavailable.
+- **Each thread has one owner.** Parallel Slack threads currently receive
+  each other's builder outcomes and discard unrelated ones, adding model
+  turns. A two-builder task normally involves a lead, two builders and a
+  reviewer; retries and investigations add sessions.
+- **Recovery has limits:** discovery needs the working branches and plan
+  to remain on GitHub. A session whose computer failed to launch may need
+  replacing with a new thread.
+
+Inspect sessions in the dashboard or CLI:
+
+```bash
+npx opencomputer session list
+npx opencomputer session inspect <session-id>
+npx opencomputer logs --session <session-id>
+```
+
+[`DX-NOTES.md`](DX-NOTES.md) covers setup and platform gotchas.
+`npm run check` verifies generated files, types, tests and `opencomputer doctor`
+without starting agents.

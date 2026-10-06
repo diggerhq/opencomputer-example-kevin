@@ -3,6 +3,11 @@
 What tripped us up building this example, so it does not trip you. Versions:
 `@opencomputer/agent` 0.9.0, `@opencomputer/cli` 0.7.16.
 
+**A project secret is not a project-scoped API key.** The dashboard's
+API Keys page creates organization-wide keys. Storing one as the project's
+`OPENCOMPUTER_API_KEY` controls where Kevin reads it, not what it authorizes.
+Kevin's configuration selects a project; it is not an authorization boundary.
+
 **A connection's `fetch` takes the absolute path, prefix included.** With
 `pathPrefix: "/api/managed-agents/"`, a call reads
 `opencomputer.fetch("/api/managed-agents/sessions", …)`. A relative path such
