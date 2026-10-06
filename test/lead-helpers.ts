@@ -155,7 +155,7 @@ export function stubManagementApi(options: {
       headers: { "content-type": "application/json" },
     });
   globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
-    if (String(url) !== "https://connections.test/opencomputer/fetch") throw new Error(`unexpected fetch ${String(url)}`);
+    if (String(url) !== "https://connections.test/management-api/fetch") throw new Error(`unexpected fetch ${String(url)}`);
     const request = JSON.parse(String(init?.body)) as {
       method: string;
       path: string;
