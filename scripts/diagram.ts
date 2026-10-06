@@ -276,7 +276,7 @@ function svg(p: Palette): string {
   }
 
   out.push(
-    `<text x="${W / 2}" y="${height - 24}" font-family="${SANS}" font-size="11" fill="${p.muted}" text-anchor="middle">One word from you moves each stage. Builders run only at Build, against an agreed plan. On request: a design review, read-only investigations.</text>`,
+    `<text x="${W / 2}" y="${height - 24}" font-family="${SANS}" font-size="11" fill="${p.muted}" text-anchor="middle">One click from you moves each stage. Builders run only at Build, against an agreed plan. On request: a design review, read-only investigations.</text>`,
     `</svg>`,
   );
   return `${out.join("\n")}\n`;
