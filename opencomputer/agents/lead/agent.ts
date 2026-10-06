@@ -95,6 +95,16 @@ function outcomeBlock(input: AgentInput): string {
   });
 }
 
+/** A click or reply that answers your last \`ask\`, and what the person wrote before the question (steering). */
+function answeredBlock(input: AgentInput): string {
+  if (!input.answer) return "";
+  const held = (input.steering ?? []).filter((item) => item.text?.trim());
+  const steering = held.length
+    ? `\nWritten before your question (steering; may change what the answer means):\n${held.map((item) => `- ${item.text?.trim()}`).join("\n")}`
+    : "";
+  return `# This answers your question\nChosen: \`${input.answer.value ?? input.answer.text}\`${input.answer.value && input.answer.text !== input.answer.value ? ` (typed: "${input.answer.text}")` : ""}.${steering}`;
+}
+
 /** The reviewer's answer, parsed, and the person's messages held while it worked (design 019 §11 review loop). */
 function answerBlocks(input: AgentInput): string {
   const held = (input.steering ?? []).filter((item) => item.text?.trim());
@@ -137,7 +147,13 @@ export default function Lead() {
   if (kind === "consult_answer") {
     return [leadInstructions({ source: "subagent", firstTurn: false }), answerBlocks(input)].join("\n\n");
   }
-  return [TURN_ROUTER, leadInstructions({ source: "channel", firstTurn: false }), threadLine(input), BRIEF_TURN].join(
-    "\n\n",
-  );
+  return [
+    TURN_ROUTER,
+    leadInstructions({ source: "channel", firstTurn: false }),
+    threadLine(input),
+    answeredBlock(input),
+    BRIEF_TURN,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }

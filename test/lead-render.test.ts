@@ -188,3 +188,19 @@ test("anything else selects nothing", () => {
     assert.equal(turnKind(input), "other");
   }
 });
+
+test("a click or reply that answers the last ask is handed to the model with what was written before it", () => {
+  const input: AgentInput = {
+    ...threadReply("design"),
+    answer: { questionId: "q-1", text: "design", value: "design" },
+    steering: [{ text: "keep the file name fixed", receivedAt: "2026-10-06T12:00:00Z" }],
+  };
+  const rendered = render(Lead, input);
+  assert.match(rendered.instructions, /# This answers your question\nChosen: `design`\./);
+  assert.match(rendered.instructions, /Written before your question[^\n]*\n- keep the file name fixed/);
+});
+
+test("an outcome turn never selects ask (an open question would hold the next outcome)", () => {
+  const rendered = render(Lead, outcome("turn.completed", "```json\n{}\n```"));
+  assert.ok(!rendered.tools.includes("ask"));
+});
