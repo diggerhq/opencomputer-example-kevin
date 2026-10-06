@@ -12,194 +12,215 @@ type Role = "you" | "lead" | "builder" | "reviewer" | "git";
 
 interface Palette {
   bg: string;
+  lane: string;
+  card: string;
+  hairline: string;
   text: string;
   muted: string;
   faint: string;
-  rule: string;
-  card: string;
-  ghostStroke: string;
+  trigger: string;
+  write: string;
   accent: Record<Role, string>;
   tint: Record<Role, string>;
 }
 
 const LIGHT: Palette = {
   bg: "#ffffff",
-  text: "#1f2328",
-  muted: "#59636e",
-  faint: "#8c959f",
-  rule: "#d8dee4",
+  lane: "#f6f8fa",
   card: "#ffffff",
-  ghostStroke: "#c8d1da",
-  accent: { you: "#1f2328", lead: "#5b4fd6", builder: "#0f8a6f", reviewer: "#b86e00", git: "#57606a" },
-  tint: { you: "#f2f4f7", lead: "#f0eefd", builder: "#e8f6f1", reviewer: "#fdf3e3", git: "#f2f4f7" },
+  hairline: "#d8dee4",
+  text: "#1f2328",
+  muted: "#656d76",
+  faint: "#9aa3ad",
+  trigger: "#b6bec7",
+  write: "#8c959f",
+  accent: { you: "#1f2328", lead: "#6e56cf", builder: "#0e9384", reviewer: "#c2780a", git: "#57606a" },
+  tint: { you: "#ffffff", lead: "#f6f4ff", builder: "#effaf7", reviewer: "#fff8ec", git: "#ffffff" },
 };
 
 const DARK: Palette = {
   bg: "#0d1117",
+  lane: "#151b23",
+  card: "#0d1117",
+  hairline: "#30363d",
   text: "#e6edf3",
   muted: "#9198a1",
-  faint: "#6e7681",
-  rule: "#30363d",
-  card: "#161b22",
-  ghostStroke: "#3d444d",
-  accent: { you: "#e6edf3", lead: "#a49bff", builder: "#3fcf9f", reviewer: "#f0b04a", git: "#9198a1" },
-  tint: { you: "#1c2128", lead: "#1f1b3a", builder: "#0f2a22", reviewer: "#2e2410", git: "#1c2128" },
+  faint: "#656c76",
+  trigger: "#4a525c",
+  write: "#6e7681",
+  accent: { you: "#e6edf3", lead: "#a495f7", builder: "#3cc9b4", reviewer: "#f0b24a", git: "#9198a1" },
+  tint: { you: "#0d1117", lead: "#1b1830", builder: "#0e2421", reviewer: "#271f10", git: "#0d1117" },
 };
 
 const STAGES = ["Brief", "Design", "Plan", "Build", "Review", "PR"];
 
-const ROWS: { role: Role; name: string; sub: string; height: number }[] = [
-  { role: "you", name: "You", sub: "in a Slack thread", height: 58 },
-  { role: "lead", name: "Lead", sub: "Fable · the thread", height: 74 },
-  { role: "builder", name: "Builders", sub: "Opus · ×N", height: 92 },
-  { role: "reviewer", name: "Reviewer", sub: "Fable · cold read", height: 62 },
-  { role: "git", name: "GitHub", sub: "the only state", height: 74 },
+const ROWS: { role: Role; name: string; sub: string }[] = [
+  { role: "you", name: "You", sub: "in a Slack thread" },
+  { role: "lead", name: "Lead", sub: "Fable · the thread" },
+  { role: "builder", name: "Builders", sub: "Opus · per stream" },
+  { role: "reviewer", name: "Reviewer", sub: "Fable · cold read" },
+  { role: "git", name: "GitHub", sub: "the only state" },
 ];
 
-/** A line of text; `code` lines are set in monospace. */
+/** A line of text; `code` lines are set in monospace. The first plain line of a card is its title. */
 type Line = string | { code: string };
 
 interface Card {
   stage: number;
   role: Role;
   lines: Line[];
-  ghost?: boolean;
-  /** Drawn as a stack of cards: several running in parallel. */
+  /** Drawn as a stack: several running in parallel. */
   deck?: boolean;
-  /** Pushed right so the column's arrows pass on its left. */
-  inset?: boolean;
 }
 
 const CARDS: Card[] = [
-  { stage: 0, role: "you", lines: [{ code: "@Kevin <sentence>" }] },
-  { stage: 1, role: "you", lines: [{ code: "design" }, "then go"] },
-  { stage: 2, role: "you", lines: [{ code: "plan" }, "then go"] },
+  { stage: 0, role: "you", lines: [{ code: "@Kevin …" }] },
+  { stage: 1, role: "you", lines: [{ code: "design · go" }] },
+  { stage: 2, role: "you", lines: [{ code: "plan · go" }] },
   { stage: 3, role: "you", lines: [{ code: "build" }] },
   { stage: 4, role: "you", lines: [{ code: "status?" }] },
-  { stage: 5, role: "you", lines: [{ code: "open · ready" }, "you merge"] },
+  { stage: 5, role: "you", lines: [{ code: "open · ready" }] },
 
-  { stage: 0, role: "lead", lines: ["brief, v1", "assumptions,", "unknowns, steps"] },
-  { stage: 1, role: "lead", lines: ["reads the code", "preview → design", "decision sheet"] },
-  { stage: 2, role: "lead", lines: ["plan", "streams by files", "preview → plan"] },
-  { stage: 3, role: "lead", lines: ["delegates streams", "merges each one", "as it lands"] },
-  { stage: 4, role: "lead", lines: ["consults reviewer", "judges findings", "folds what holds"] },
-  { stage: 5, role: "lead", lines: ["PR description", "for a human", "opens the draft"] },
+  { stage: 0, role: "lead", lines: ["Brief", "what it will take"] },
+  { stage: 1, role: "lead", lines: ["Design", "reads the code"] },
+  { stage: 2, role: "lead", lines: ["Plan", "streams by file"] },
+  { stage: 3, role: "lead", lines: ["Delegates", "merges streams"] },
+  { stage: 4, role: "lead", lines: ["Judges", "folds what holds"] },
+  { stage: 5, role: "lead", lines: ["Opens the PR", "for a human"] },
 
-  { stage: 1, role: "builder", lines: ["investigate", "read only"], ghost: true, inset: true },
-  { stage: 3, role: "builder", lines: ["one per stream", "own computer", "own branch"], deck: true },
+  { stage: 3, role: "builder", lines: ["Build", "own computer"], deck: true },
 
-  { stage: 1, role: "reviewer", lines: ["design review", "on request"], ghost: true, inset: true },
-  { stage: 4, role: "reviewer", lines: ["reads the branch", "findings, verdict"] },
+  { stage: 4, role: "reviewer", lines: ["Review", "reads it cold"] },
 
-  { stage: 1, role: "git", lines: [{ code: ".agents/design/" }, { code: "<slug>.md" }] },
-  { stage: 2, role: "git", lines: [{ code: ".agents/work/" }, { code: "<slug>.md" }] },
-  { stage: 3, role: "git", lines: [{ code: "agent/<slug>--api" }, { code: "agent/<slug>--ui" }, "→ agent/<slug>"] },
-  { stage: 5, role: "git", lines: ["draft PR → ready"] },
+  { stage: 1, role: "git", lines: ["design doc"] },
+  { stage: 2, role: "git", lines: ["plan doc"] },
+  { stage: 3, role: "git", lines: [{ code: "agent/<slug>" }] },
+  { stage: 5, role: "git", lines: ["pull request"] },
 ];
 
 /**
- * Arrows inside one stage column. `back` arrows run upward (an answer
- * returning); `lane` shifts an arrow left (-) or right (+) of the centre;
- * `left` routes it along the cards' left edge, past inset cards.
+ * Arrows inside one stage column. `trigger`: your word starting the stage
+ * (quiet). `write`: a commit to the repository. `back`: an answer returning
+ * (dashed, upward). `lane` shifts a pair of arrows apart.
  */
-const LINKS: { stage: number; from: Role; to: Role; label?: string; back?: boolean; lane?: number; left?: boolean }[] = [
-  { stage: 0, from: "you", to: "lead" },
-  { stage: 1, from: "you", to: "lead" },
-  { stage: 1, from: "lead", to: "git", left: true },
-  { stage: 2, from: "you", to: "lead" },
-  { stage: 2, from: "lead", to: "git" },
-  { stage: 3, from: "you", to: "lead" },
-  { stage: 3, from: "lead", to: "builder", lane: -10 },
+const LINKS: {
+  stage: number;
+  from: Role;
+  to: Role;
+  kind?: "trigger" | "write";
+  back?: boolean;
+  lane?: number;
+  label?: string;
+}[] = [
+  ...STAGES.map((_, stage) => ({ stage, from: "you" as Role, to: "lead" as Role, kind: "trigger" as const })),
+  { stage: 1, from: "lead", to: "git", kind: "write" },
+  { stage: 2, from: "lead", to: "git", kind: "write" },
+  { stage: 3, from: "lead", to: "builder", lane: -10, label: "delegate" },
   { stage: 3, from: "builder", to: "lead", back: true, lane: 10, label: "outcomes" },
-  { stage: 3, from: "builder", to: "git" },
-  { stage: 4, from: "you", to: "lead" },
+  { stage: 3, from: "builder", to: "git", kind: "write" },
   { stage: 4, from: "lead", to: "reviewer", lane: -10, label: "consult" },
   { stage: 4, from: "reviewer", to: "lead", back: true, lane: 10, label: "verdict" },
-  { stage: 5, from: "you", to: "lead" },
-  { stage: 5, from: "lead", to: "git" },
+  { stage: 5, from: "lead", to: "git", kind: "write" },
 ];
 
 const W = 960;
-const LABEL_W = 140;
-const COL_W = (W - LABEL_W - 16) / STAGES.length;
-const TOP = 92;
-const GAP = 10;
-const PAD = 6;
-const LINE_H = 14;
-const SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
+const MARGIN = 20;
+const LABEL_W = 156;
+const COL_W = (W - LABEL_W - MARGIN) / STAGES.length;
+const CARD_PAD_X = 12;
+const LINE_H = 16;
+const ROW_PAD = 18;
+const ROW_GAP = 14;
+const DECK = 6;
+const HEADER_H = 128;
+const SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
 const MONO = "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace";
 
 const esc = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const colX = (stage: number) => LABEL_W + stage * COL_W;
+const colMid = (stage: number) => colX(stage) + COL_W / 2;
 
-function rowTops(): number[] {
-  const tops: number[] = [];
-  let y = TOP;
-  for (const row of ROWS) {
-    tops.push(y);
-    y += row.height + GAP;
-  }
-  return tops;
+interface Layout {
+  top: number;
+  height: number;
+  cardH: number;
 }
 
-function cardBox(card: Card, tops: number[]): { x: number; y: number; w: number; h: number } {
-  const rowIndex = ROWS.findIndex((row) => row.role === card.role);
-  const row = ROWS[rowIndex]!;
-  const inset = card.inset ? 26 : 0;
-  const x = LABEL_W + card.stage * COL_W + PAD + inset;
-  const w = COL_W - PAD * 2 - inset;
-  const h = card.lines.length * LINE_H + 16;
-  return { x, y: tops[rowIndex]! + (row.height - h) / 2 + (card.deck ? -4 : 0), w, h };
+/** Every card in a row has the row's height, so the rows read as lines. */
+function layout(): Layout[] {
+  const rows: Layout[] = [];
+  let y = HEADER_H;
+  for (const row of ROWS) {
+    const cards = CARDS.filter((card) => card.role === row.role);
+    const lines = Math.max(...cards.map((card) => card.lines.length));
+    const cardH = lines * LINE_H + 22;
+    const deck = cards.some((card) => card.deck) ? DECK : 0;
+    const height = cardH + ROW_PAD * 2 + deck;
+    rows.push({ top: y, height, cardH });
+    y += height + ROW_GAP;
+  }
+  return rows;
+}
+
+function cardBox(card: Card, rows: Layout[]): { x: number; y: number; w: number; h: number } {
+  const row = rows[ROWS.findIndex((candidate) => candidate.role === card.role)]!;
+  return { x: colX(card.stage) + CARD_PAD_X, y: row.top + ROW_PAD, w: COL_W - CARD_PAD_X * 2, h: row.cardH };
 }
 
 function svg(p: Palette): string {
-  const tops = rowTops();
-  const height = tops[tops.length - 1]! + ROWS[ROWS.length - 1]!.height + 44;
+  const rows = layout();
+  const last = rows[rows.length - 1]!;
+  const height = last.top + last.height + 60;
   const out: string[] = [];
+  const roles: Role[] = ["you", "lead", "builder", "reviewer", "git"];
+
   out.push(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${height}" width="${W}" height="${height}" role="img" aria-label="How Kevin works: who acts at each stage and what lands in git">`,
     `<defs>`,
-    `<linearGradient id="res" x1="0" x2="1"><stop offset="0" stop-color="${p.accent.lead}" stop-opacity="0.12"/><stop offset="1" stop-color="${p.accent.lead}" stop-opacity="0.9"/></linearGradient>`,
-    ...(["you", "lead", "builder", "reviewer", "git"] as Role[]).map(
+    ...roles.map(
       (role) =>
-        `<marker id="arrow-${role}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="${p.accent[role]}"/></marker>`,
+        `<marker id="head-${role}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1,1 L9,5 L1,9" fill="none" stroke="${p.accent[role]}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>`,
+    ),
+    ...(["trigger", "write"] as const).map(
+      (kind) =>
+        `<marker id="head-${kind}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1,1 L9,5 L1,9" fill="none" stroke="${p[kind]}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>`,
     ),
     `</defs>`,
-    `<rect width="${W}" height="${height}" rx="12" fill="${p.bg}"/>`,
+    `<rect width="${W}" height="${height}" rx="16" fill="${p.bg}"/>`,
   );
 
-  // Resolution bar: blurry and cheap to correct first, sharp and expensive last.
-  const barX = LABEL_W + PAD;
-  const barW = W - LABEL_W - 16 - PAD * 2;
+  // Header: a timeline whose nodes sharpen left to right — blurry and cheap first, sharp and expensive last.
+  const lineY = 50;
   out.push(
-    `<text x="${barX}" y="24" font-family="${SANS}" font-size="11" fill="${p.muted}">blurry · cheap to change</text>`,
-    `<text x="${barX + barW}" y="24" font-family="${SANS}" font-size="11" fill="${p.muted}" text-anchor="end">sharp · expensive to change</text>`,
-    `<rect x="${barX}" y="32" width="${barW}" height="4" rx="2" fill="url(#res)"/>`,
+    `<text x="${colMid(0)}" y="26" font-family="${SANS}" font-size="10.5" fill="${p.faint}" text-anchor="middle">blurry · cheap to change</text>`,
+    `<text x="${colMid(STAGES.length - 1)}" y="26" font-family="${SANS}" font-size="10.5" fill="${p.faint}" text-anchor="middle">sharp · expensive to change</text>`,
+    `<line x1="${colMid(0)}" y1="${lineY}" x2="${colMid(STAGES.length - 1)}" y2="${lineY}" stroke="${p.hairline}" stroke-width="1.5"/>`,
   );
-
-  // Stage headers and column rules.
   STAGES.forEach((stage, index) => {
-    const x = LABEL_W + index * COL_W;
+    const x = colMid(index);
+    const t = index / (STAGES.length - 1);
     out.push(
-      `<text x="${x + COL_W / 2}" y="66" font-family="${SANS}" font-size="13" font-weight="600" fill="${p.text}" text-anchor="middle">${stage}</text>`,
+      `<circle cx="${x}" cy="${lineY}" r="${3 + t * 2.5}" fill="${p.accent.lead}" fill-opacity="${0.22 + t * 0.78}" stroke="${p.bg}" stroke-width="3"/>`,
+      `<text x="${x}" y="${lineY + 30}" font-family="${MONO}" font-size="9.5" fill="${p.faint}" text-anchor="middle" letter-spacing="0.6">0${index + 1}</text>`,
+      `<text x="${x}" y="${lineY + 50}" font-family="${SANS}" font-size="14" font-weight="600" fill="${p.text}" text-anchor="middle">${stage}</text>`,
     );
-    if (index > 0) out.push(`<line x1="${x}" y1="52" x2="${x}" y2="${height - 40}" stroke="${p.rule}" stroke-width="1" stroke-dasharray="2 4"/>`);
   });
-  out.push(`<line x1="16" y1="${TOP - 12}" x2="${W - 16}" y2="${TOP - 12}" stroke="${p.rule}" stroke-width="1"/>`);
 
-  // Row labels.
+  // Lanes and row labels.
   ROWS.forEach((row, index) => {
-    const mid = tops[index]! + row.height / 2;
+    const { top, height: h } = rows[index]!;
     out.push(
-      `<rect x="16" y="${tops[index]! + 6}" width="3" height="${row.height - 12}" rx="1.5" fill="${p.accent[row.role]}"/>`,
-      `<text x="28" y="${mid - 2}" font-family="${SANS}" font-size="13" font-weight="600" fill="${p.text}">${row.name}</text>`,
-      `<text x="28" y="${mid + 14}" font-family="${SANS}" font-size="10.5" fill="${p.muted}">${esc(row.sub)}</text>`,
+      `<rect x="${MARGIN}" y="${top}" width="${W - MARGIN * 2}" height="${h}" rx="12" fill="${p.lane}"/>`,
+      `<circle cx="${MARGIN + 18}" cy="${top + h / 2 - 7}" r="3.5" fill="${p.accent[row.role]}"/>`,
+      `<text x="${MARGIN + 30}" y="${top + h / 2 - 2.5}" font-family="${SANS}" font-size="13" font-weight="600" fill="${p.text}">${row.name}</text>`,
+      `<text x="${MARGIN + 30}" y="${top + h / 2 + 13}" font-family="${SANS}" font-size="10.5" fill="${p.muted}">${esc(row.sub)}</text>`,
     );
   });
 
-  // Links first, so cards sit on top of them.
+  // Arrows, under the cards.
   const boxOf = (stage: number, role: Role) => {
-    const card = CARDS.find((candidate) => candidate.stage === stage && candidate.role === role && !candidate.ghost);
-    return card ? cardBox(card, tops) : undefined;
+    const card = CARDS.find((candidate) => candidate.stage === stage && candidate.role === role);
+    return card ? { card, box: cardBox(card, rows) } : undefined;
   };
   for (const link of LINKS) {
     const from = boxOf(link.stage, link.from);
@@ -207,52 +228,55 @@ function svg(p: Palette): string {
     if (!from || !to) continue;
     const upper = link.back ? to : from;
     const lower = link.back ? from : to;
-    const x = link.left ? upper.x + 13 : upper.x + upper.w / 2 + (link.lane ?? 0);
-    const deckBelow = CARDS.some((card) => card.stage === link.stage && card.deck && card.role === (link.back ? link.from : link.to));
-    const top = upper.y + upper.h;
-    const bottom = lower.y - (deckBelow ? 8 : 0);
-    const color = p.accent[link.back ? link.from : link.to];
-    const [y1, y2] = link.back ? [bottom, top + 2] : [top, bottom - 2];
+    const top = upper.box.y + upper.box.h + (upper.card.deck ? DECK : 0);
+    const bottom = lower.box.y;
+    const x = colMid(link.stage) + (link.lane ?? 0);
+    const role = link.back ? link.from : link.to;
+    const stroke = link.kind === "trigger" ? p.trigger : link.kind === "write" ? p.write : p.accent[role];
+    const marker = link.kind === "trigger" ? "head-trigger" : link.kind === "write" ? "head-write" : `head-${role}`;
+    const [y1, y2] = link.back ? [bottom - 1, top + 3] : [top + 1, bottom - 3];
+    const dash = link.back ? ' stroke-dasharray="3 3"' : "";
     out.push(
-      `<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" stroke="${color}" stroke-width="1.4" marker-end="url(#arrow-${link.back ? link.from : link.to})"${link.back ? ' stroke-dasharray="4 3"' : ""} opacity="0.9"/>`,
+      `<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" stroke="${stroke}" stroke-width="1.3"${dash} stroke-linecap="round" marker-end="url(#${marker})"/>`,
     );
+    if (link.kind === "write") out.push(`<circle cx="${x}" cy="${y1 + 1}" r="2" fill="${stroke}"/>`);
     if (link.label) {
-      const anchor = (link.lane ?? 0) < 0 ? "end" : "start";
-      const dx = (link.lane ?? 0) < 0 ? -5 : 5;
+      const left = (link.lane ?? 0) < 0;
       out.push(
-        `<text x="${x + dx}" y="${(top + bottom) / 2 + 3.5}" font-family="${SANS}" font-size="10" fill="${p.muted}" text-anchor="${anchor}">${link.label}</text>`,
+        `<text x="${x + (left ? -7 : 7)}" y="${(top + bottom) / 2 + 3.5}" font-family="${SANS}" font-size="10" fill="${p.muted}" text-anchor="${left ? "end" : "start"}">${link.label}</text>`,
       );
     }
   }
 
   // Cards.
   for (const card of CARDS) {
-    const box = cardBox(card, tops);
-    const stroke = card.ghost ? p.ghostStroke : p.accent[card.role];
-    const fill = card.ghost ? p.bg : p.tint[card.role];
+    const box = cardBox(card, rows);
+    const accent = p.accent[card.role];
     if (card.deck) {
-      for (const offset of [8, 4]) {
+      for (const offset of [DECK, DECK / 2]) {
         out.push(
-          `<rect x="${box.x + offset}" y="${box.y + offset}" width="${box.w}" height="${box.h}" rx="8" fill="${p.card}" stroke="${stroke}" stroke-width="1" opacity="${offset === 8 ? 0.45 : 0.7}"/>`,
+          `<rect x="${box.x + offset}" y="${box.y + offset}" width="${box.w}" height="${box.h}" rx="9" fill="${p.card}" stroke="${accent}" stroke-opacity="${offset === DECK ? 0.25 : 0.45}"/>`,
         );
       }
     }
+    const neutral = card.role === "you" || card.role === "git";
     out.push(
-      `<rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="8" fill="${fill}" stroke="${stroke}" stroke-width="${card.ghost ? 1 : 1.2}"${card.ghost ? ' stroke-dasharray="3 3"' : ""}/>`,
+      `<rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="9" fill="${p.tint[card.role]}" stroke="${neutral ? p.hairline : accent}" stroke-opacity="${neutral ? 1 : 0.5}"/>`,
     );
+    const blockH = card.lines.length * LINE_H;
+    const firstY = box.y + (box.h - blockH) / 2 + LINE_H - 4;
     card.lines.forEach((line, index) => {
-      const y = box.y + 8 + LINE_H * index + 10.5;
       const code = typeof line !== "string";
-      const color = card.ghost ? p.faint : index === 0 && !code ? p.text : code ? p.accent[card.role] : p.muted;
-      const weight = index === 0 && !card.ghost && !code ? ' font-weight="600"' : "";
+      const title = !code && index === 0 && card.role !== "git";
+      const color = title ? accent : code ? p.text : p.muted;
       out.push(
-        `<text x="${box.x + box.w / 2}" y="${y}" font-family="${code ? MONO : SANS}" font-size="${code ? 10.5 : 11}"${weight} fill="${color}" text-anchor="middle">${esc(code ? line.code : line)}</text>`,
+        `<text x="${box.x + box.w / 2}" y="${firstY + index * LINE_H}" font-family="${code ? MONO : SANS}" font-size="${code ? 11 : title ? 12 : 11}"${title ? ' font-weight="600"' : ""} fill="${color}" text-anchor="middle">${esc(code ? line.code : line)}</text>`,
       );
     });
   }
 
   out.push(
-    `<text x="${W / 2}" y="${height - 16}" font-family="${SANS}" font-size="11" fill="${p.muted}" text-anchor="middle">You move it on with one word per stage. Builders exist only in Build: code is written once, against an agreed plan. Dashed boxes run only when needed.</text>`,
+    `<text x="${W / 2}" y="${height - 24}" font-family="${SANS}" font-size="11" fill="${p.muted}" text-anchor="middle">One word from you moves each stage. Builders run only at Build, against an agreed plan. On request: a design review, read-only investigations.</text>`,
     `</svg>`,
   );
   return `${out.join("\n")}\n`;
