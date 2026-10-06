@@ -95,13 +95,9 @@ async function describe(found: Found, sessionId: string): Promise<Record<string,
       state: stream.state,
     });
   }
-  const forks: Json[] = [];
   for (const ref of streamRefs) {
     const name = ref.branch.slice(`${branch}--`.length);
-    if (name.startsWith("fork-")) {
-      // The fork's thread is in its own plan header (§9); fork mechanics wait for slack-ux P4.
-      forks.push({ branch: ref.branch, thread: "", sha: ref.sha });
-    } else if (!names.has(name)) {
+    if (!names.has(name)) {
       streams.push({ name, branch: ref.branch, merged: await merged(ref.branch), attempt: 0, state: "unrecorded" });
     }
   }
@@ -128,7 +124,6 @@ async function describe(found: Found, sessionId: string): Promise<Record<string,
       ? { pr: { number: pull.number, draft: pull.draft, merged: pull.merged_at !== null, url: pull.html_url } }
       : {}),
     streams,
-    forks,
     lastCommits: commits.map((commit) => ({ sha: commit.sha, subject: commit.commit.message.split("\n")[0] ?? "" })),
     state: state as unknown as Json,
     ...(subscriptionDeleted ? { subscriptionDeleted } : {}),
@@ -146,7 +141,7 @@ export const whereAreWe = defineTool({
   description:
     "Where this thread's work stands, read from GitHub (refs and the plan's kevin-state block; no clone). Call it first on every turn " +
     "except the brief. Returns { slug?, repo?, branch?, base, version, docs: { design?, plan?, prompts? }, pr?, " +
-    "streams: [{ name, branch, merged, sessionId?, attempt, state }], forks, lastCommits, state? }; " +
+    "streams: [{ name, branch, merged, sessionId?, attempt, state }], lastCommits, state? }; " +
     "no slug = no work found for this session/thread (then slugsInUse lists taken slugs when repo was given).",
   input: {
     type: "object",
@@ -169,7 +164,6 @@ export const whereAreWe = defineTool({
       version: 0,
       docs: {},
       streams: [],
-      forks: [],
       lastCommits: [],
       slugsInUse,
     };

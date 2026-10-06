@@ -376,7 +376,6 @@ function githubFor(state: object, options: { running?: boolean } = {}) {
         { ref: `refs/heads/agent/${SLUG}`, object: { sha: "a1" } },
         { ref: `refs/heads/agent/${SLUG}--api`, object: { sha: "a2" } },
         { ref: `refs/heads/agent/${SLUG}--web`, object: { sha: "a3" } },
-        { ref: `refs/heads/agent/${SLUG}--fork-1`, object: { sha: "a4" } },
       ]);
     }
     if (path === `repos/${REPO}/contents/.agents/work/older-work.md?ref=agent%2Folder-work`) {
@@ -427,7 +426,6 @@ test("where_are_we: finds the work by session id across granted repos and return
         { name: "api", branch: `agent/${SLUG}--api`, merged: true, sessionId: "impl-1", attempt: 1, state: "merged" },
         { name: "web", branch: `agent/${SLUG}--web`, merged: false, sessionId: "impl-2", attempt: 2, state: "running" },
       ],
-      forks: [{ branch: `agent/${SLUG}--fork-1`, thread: "", sha: "a4" }],
       lastCommits: [{ sha: "c1", subject: "Merge stream api into agent/csv-export" }],
       state,
     });
@@ -478,7 +476,6 @@ test("where_are_we: nothing running → deletes the outcome subscription; no wor
       version: 0,
       docs: {},
       streams: [],
-      forks: [],
       lastCommits: [],
       slugsInUse: ["older-work", SLUG],
     });
