@@ -22,7 +22,7 @@ interface Found {
 }
 
 /**
- * Finds this thread's work (design 019 §8 "Which work is this thread"): the
+ * Finds this thread's work: the
  * `agent/*` refs of the repo (or of every granted repo), each candidate's plan
  * read through the contents API, matched on the state's lead session id or
  * thread id. O(open branches); no clone.
@@ -56,7 +56,7 @@ async function find(sessionId: string, threadId: string | undefined, repos: stri
   return { found: undefined, slugsInUse };
 }
 
-/** The design 019 §11 `where_are_we` result for found work. */
+/** The `where_are_we` result for found work. */
 async function describe(found: Found, sessionId: string): Promise<Record<string, Json>> {
   const { repo, slug, plan, state, planRepo, planBranch, refs } = found;
   const branch = `agent/${slug}`;
@@ -111,7 +111,7 @@ async function describe(found: Found, sessionId: string): Promise<Record<string,
       `repos/${repo}/commits?sha=${encodeURIComponent(branch)}&per_page=5`,
     )) ?? [];
 
-  // Nothing runs → nothing should wake this session (work 040 "Delegate", GAP(K9) cost window).
+  // Nothing runs → nothing should wake this session: a live subscription would wake (and bill) an idle lead.
   let subscriptionDeleted = false;
   if (state.subscriptionId && !state.streams.some((stream) => stream.state === "running")) {
     subscriptionDeleted = (await deleteSubscriptions(state.leadSessionId || sessionId)) > 0;
@@ -136,12 +136,10 @@ async function describe(found: Found, sessionId: string): Promise<Record<string,
 }
 
 /**
- * Where this thread's work stands, from GitHub alone (design 019 §8, §11).
+ * Where this thread's work stands, from GitHub alone.
  * Input `{ sessionId, threadId? }`: the session id defaults to the calling
  * session's; `repo` narrows the search (else every granted repo, ≤30).
- * A code tool running `gh api` on the computer; whether it sees the token is
- * I1 (work 040), still to run live — on failure the same JSON comes from a
- * shell procedure in `process/`.
+ * A code tool running `gh api` on the computer with the installation token.
  */
 export const whereAreWe = defineTool({
   name: "where_are_we",

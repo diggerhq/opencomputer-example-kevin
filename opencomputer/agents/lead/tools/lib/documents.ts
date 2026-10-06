@@ -1,5 +1,5 @@
 /**
- * Documents and where they live (design 019 §6, §7; work 040 "Documents"):
+ * Documents and where they live:
  * same-repo mode → the code repo's `agent/<slug>`; docs-repo mode → the docs
  * repo's default branch. Only the lead writes them, one file per commit.
  */

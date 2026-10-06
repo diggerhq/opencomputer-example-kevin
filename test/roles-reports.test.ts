@@ -17,7 +17,7 @@ const topLevelKeys = (shape: string) => {
   return keys;
 };
 
-test("the process text gives each role the §11 report shape in a fenced json block", () => {
+test("the process text gives each role the report shape in a fenced json block", () => {
   assert.equal(firstFencedJson(implementerInstructions()), IMPLEMENTER_REPORT_SHAPE);
   assert.equal(firstFencedJson(reviewerInstructions()), REVIEWER_REPORT_SHAPE);
   assert.deepEqual(topLevelKeys(IMPLEMENTER_REPORT_SHAPE), ["landed", "checks", "blocked", "planAmendments"]);
@@ -64,7 +64,7 @@ const IMPLEMENTER_REPORTS = {
 };
 
 for (const [name, message] of Object.entries(IMPLEMENTER_REPORTS)) {
-  test(`implementer report (${name}) parses as the §11 shape from the first fenced block`, () => {
+  test(`implementer report (${name}) parses as the report shape from the first fenced block`, () => {
     const block = firstFencedJson(message);
     assert.ok(block);
     assert.ok(isImplementerReport(JSON.parse(block)));
@@ -82,7 +82,7 @@ test("implementer report: a wrong shape does not pass (the lead treats it as blo
   }
 });
 
-// The consult answer as the lead receives it: the platform's wrapper line, then the reviewer's final message (blue src/consult.ts consultAnswerText).
+// The consult answer as the lead receives it: the platform's wrapper line, then the reviewer's final message.
 const answered = (body: string) => `Agent kevin--reviewer answered:\n${body}`;
 
 test("reviewer report (fix-first) parses after the wrapper line", () => {

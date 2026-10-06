@@ -1,7 +1,7 @@
 /**
- * The assignment (design 019 §11): one schema for `delegate` input and the
+ * The assignment: one schema for `delegate` input and the
  * implementer's turn payload, and the one-paragraph turn text that goes with
- * it (work 040 "Implementer assignment text").
+ * it.
  */
 import { checkRepo } from "./github";
 

@@ -1,7 +1,7 @@
 /**
  * The OpenComputer management API through the `opencomputer` connection: the
  * platform attaches `x-api-key` at the edge, so no credential is on the
- * computer (design 019 §12 "API access"). Paths are absolute, prefix included.
+ * computer. Paths are absolute, prefix included.
  */
 import { config } from "../../config";
 import { opencomputer } from "../../connections/opencomputer";
@@ -81,7 +81,7 @@ export async function leadSubscriptions(leadSessionId: string): Promise<Subscrip
 
 /**
  * The subscription that wakes this lead session on implementer outcomes,
- * created when missing (work 040 "Delegate"). Subscriptions are captured at
+ * created when missing. Subscriptions are captured at
  * admission, so it must exist before the first implementer turn starts.
  */
 export async function ensureSubscription(leadSessionId: string): Promise<string> {

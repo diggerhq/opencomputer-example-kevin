@@ -20,7 +20,7 @@ const ALL_TOOLS = [
 const EVENT_TOOLS = [TOOL_NAMES.commitDocument, TOOL_NAMES.delegate, TOOL_NAMES.integrate, "sandbox_exec", TOOL_NAMES.whereAreWe].sort();
 const BOTH_CONNECTIONS = ["github", "management-api"];
 
-/** A mention inside an existing thread, once the ingress names the thread (blue P1 (b)). */
+/** A mention inside an existing thread, once the ingress names the thread. */
 function threadReply(text: string): AgentInput {
   return {
     source: "channel",
@@ -75,7 +75,7 @@ function dataOf(instructions: string, title: string): unknown {
   return JSON.parse(body ?? "null");
 }
 
-test("channel, first turn: the brief route is offered and needs no tool call; all tools selected (GAP K17)", () => {
+test("channel, first turn: the brief route is offered and needs no tool call; all tools selected", () => {
   const rendered = render(Lead, slackMention("add CSV export to the orders page"));
   assert.deepEqual(rendered.models, ["anthropic/claude-fable-5.1"]);
   assert.deepEqual(rendered.tools, ALL_TOOLS);

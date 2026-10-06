@@ -1,7 +1,6 @@
 /**
- * Parsers for what other agents send the lead (design 019 §11 "implementer
- * report", "reviewer report"; work 040 "Implementer report", "Reviewer
- * brief"). Pure: the render uses them, so nothing here touches the computer.
+ * Parsers for what other agents send the lead: implementer reports and
+ * reviewer answers. Pure: the render uses them, so nothing here touches the computer.
  */
 
 export interface ImplementerReport {
@@ -32,7 +31,7 @@ export interface ReviewerReport {
 export type ParsedReviewerAnswer = ReviewerReport & {
   /** False when the answer was not a report (failed, cancelled, asking, unavailable). */
   available: boolean;
-  /** The member did not settle within the consult deadline: wait, consult once more (work 040 "Reviewer brief"). */
+  /** The member did not settle within the consult deadline: wait, consult once more. */
   unsettled: boolean;
 };
 

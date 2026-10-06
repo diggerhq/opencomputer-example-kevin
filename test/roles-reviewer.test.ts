@@ -14,7 +14,7 @@ import { render, slackMention } from "./helpers";
 
 const ROOT = resolve(import.meta.dirname, "..");
 
-/** design 019 §11 "consult brief (reviewer side)", as blue session-do.ts dispatches it. */
+/** A consult as the platform dispatches it to the reviewer. */
 const consult = (text: string): AgentInput => ({
   source: "subagent",
   text,
@@ -97,7 +97,7 @@ test("the reviewer can select nothing that writes: no defined tools, no ask or c
     assert.ok(rendered.connections.every((connection) => connection === "github"), rendered.connections.join());
     assert.deepEqual(rendered.services, []);
   }
-  // design 019 §12: reviewers declare contents, pull_requests and metadata read; the token is minted from the declaration.
+  // Reviewers declare contents, pull_requests and metadata read; the token is minted from the declaration.
   assert.deepEqual(github.provider.permissions, { contents: "read", pull_requests: "read", metadata: "read" });
   // The manifest the CLI builds: literal tool ids of useTool calls in the agent source, and no tools/ directory.
   const source = await readFile(resolve(ROOT, "opencomputer/agents/reviewer/agent.ts"), "utf8");

@@ -1,6 +1,6 @@
 /**
  * Copies the one process source (`process/`) into each agent's `process/`.
- * The CLI bundler refuses imports outside an agent's directory (GAP(K13)),
+ * The CLI bundler refuses imports outside an agent's directory,
  * so shared text is generated per agent and committed.
  *
  *   npm run generate            write

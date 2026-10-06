@@ -1,6 +1,6 @@
 /**
  * The lead's deployment facts. A tool's context carries only the session,
- * agent and tool-call ids (GAP(K12)), so the project and environment the
+ * agent and tool-call ids, so the project and environment the
  * lead delegates into are written here. A copy of this example changes
  * projectId and agentPrefix after `opencomputer link --create-project`.
  */

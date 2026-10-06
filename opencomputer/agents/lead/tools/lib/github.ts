@@ -1,6 +1,7 @@
 /**
  * GitHub reads through `gh api` with the deployment's installation token
- * (on the computer as GH_TOKEN). No clone: design 019 §8 "where are we".
+ * (on the computer as GH_TOKEN). No clone: answering "where are we" reads refs
+ * and files through the API, so it needs no checkout.
  */
 import { runtime } from "./exec";
 

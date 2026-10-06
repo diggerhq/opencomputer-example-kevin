@@ -1,9 +1,9 @@
 /**
- * Report shapes as design 019 §11 states them, for the S3 tests. The lead's
- * own parser is S2's; these check the same contract from the outside.
+ * Report shapes as the process text states them, for the role tests. The
+ * lead has its own parser; these check the same contract from the outside.
  */
 
-/** The first fenced block's body (work 040 "Implementer report": the lead's parser reads the first fenced block). */
+/** The first fenced block's body (the lead's parser reads the first fenced block). */
 export function firstFencedJson(text: string): string | undefined {
   return /```(?:json)?[ \t]*\n([\s\S]*?)\n```/.exec(text)?.[1];
 }

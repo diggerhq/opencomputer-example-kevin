@@ -20,7 +20,7 @@ async function view(repo: string, head: string): Promise<PullRequest> {
 }
 
 /**
- * The PR (work 040 "open-pr"; design 019 §6 PR, §11 sequence steps 9–10):
+ * The PR:
  * `gh pr create --draft --base <base> --head agent/<slug> --title --body-file`;
  * `ready: true` → `gh pr ready`. Either way the session's outcome
  * subscription is deleted: nothing runs after the PR.

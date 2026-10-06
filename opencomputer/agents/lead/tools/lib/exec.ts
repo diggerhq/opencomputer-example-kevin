@@ -42,7 +42,7 @@ export const realExec: Exec = (command, args, options = {}) =>
 /**
  * Where the tools run. On the computer: real commands, clones under
  * `/workspace/.kevin` (the workspace persists across turns, so a clone is a
- * cache, design 019 §3), remotes on GitHub. Tests replace `exec` to answer
+ * cache), remotes on GitHub. Tests replace `exec` to answer
  * `gh` themselves and point `remoteBase` at local bare repositories.
  */
 export const runtime: { exec: Exec; cloneRoot: string; remoteBase: string } = {

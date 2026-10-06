@@ -1,5 +1,5 @@
 /**
- * The process text (design 019 §2 "Guidance, not a harness"): these tests
+ * The process text (guidance, not a harness): these tests
  * hold the machine-parsed contracts exact and check that each turn kind
  * carries the concepts, mechanics and boundaries it needs. They do not pin
  * phrasing; rewording the guidance should not break them.
@@ -160,7 +160,7 @@ test("concepts: the implementer and the reviewer are told why their context is n
 
 // ---- Shapes: reference material, fitted to the work ----
 
-test("shapes: the reference module carries design 019 §4's labels and sizes", () => {
+test("shapes: the reference module carries the snapshot labels and sizes", () => {
   assert.deepEqual(snapshotLabels, {
     brief: ["What", "Why", "In", "Out", "Unknowns", "Steps", "Questions", "Next"],
     designPreview: ["Kernel", "Constraints", "Components", "Contracts", "Risks", "Decisions", "Unknowns left", "Next"],

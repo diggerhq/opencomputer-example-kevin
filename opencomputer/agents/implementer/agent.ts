@@ -8,7 +8,7 @@ export const CONNECTIONS = [github] as const;
 
 /**
  * The computer command tool. Workerd registers it as both `shell` and
- * `sandbox_exec` (blue `src/workerd-runtime/index.ts`, `registerCommandTool`);
+ * `sandbox_exec`;
  * the docs name `sandbox_exec`. Workerd has no file tools, so this is the
  * implementer's only way to read and write code. The render passes the id as
  * a string literal: the CLI builds the manifest from the literal ids of the
@@ -16,7 +16,7 @@ export const CONNECTIONS = [github] as const;
  */
 export const SHELL = "sandbox_exec";
 
-/** design 019 §11 "assignment": one schema for `delegate` input and this turn's payload. */
+/** The assignment: one schema for `delegate` input and this turn's payload. */
 export interface Assignment {
   kind: "build" | "spike" | "investigate";
   slug: string;
@@ -108,7 +108,7 @@ export function branchOf(assignment: Assignment): string | undefined {
   return assignment.branch ?? `agent/${assignment.slug}--${assignment.stream}`;
 }
 
-/** work 040 "Implementer assignment text": one paragraph (repo, branch, base, stream, done-when, plan URL), then the files and the payload. */
+/** The assignment text: one paragraph (repo, branch, base, stream, done-when, plan URL), then the files and the payload. */
 export function renderAssignment(assignment: Assignment): string {
   const branch = branchOf(assignment);
   const where =
@@ -162,12 +162,12 @@ export function renderRefusal(problems: string[]): string {
   ].join("\n\n");
 }
 
-/** Kevin's implementer (design 019 §5): one assignment from the turn payload, shell and GitHub only. */
+/** Kevin's implementer: one assignment from the turn payload, shell and GitHub only. */
 export default function Implementer() {
   useModel("anthropic/claude-opus-5.5");
   // The lead's delegate starts this turn through the sessions API, which
-  // admits it as `source: "user"` with the payload (blue src/edge/index.ts
-  // turns route); the render reads the payload whatever the source.
+  // admits it as `source: "user"` with the payload; the render reads the
+  // payload whatever the source.
   const parsed = parseAssignment(useInput().payload);
   if (!parsed.ok) return [implementerInstructions(), renderRefusal(parsed.problems)].join("\n\n");
   useTool("sandbox_exec");

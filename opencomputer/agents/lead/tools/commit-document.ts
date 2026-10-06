@@ -3,8 +3,7 @@ import { defineTool } from "@opencomputer/agent";
 import { commitDocument as commit } from "./lib/documents";
 
 /**
- * Writes, commits and pushes one document (work 040 "Documents"; design 019
- * §6–§7): same-repo → the code repo's `agent/<slug>`, created from the
+ * Writes, commits and pushes one document: same-repo → the code repo's `agent/<slug>`, created from the
  * default branch at the first go; docs repo → its default branch. Given
  * `state`, rewrites the plan's `kevin-state` block; given `version`, writes
  * `version:` into the header.

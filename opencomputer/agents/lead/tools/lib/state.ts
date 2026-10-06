@@ -1,6 +1,5 @@
 /**
- * The plan's machine-readable state (work 040 "Plan state", design 019 §11
- * "plan state"): one fenced ```kevin-state``` JSON block in the plan.
+ * The plan's machine-readable state: one fenced ```kevin-state``` JSON block in the plan.
  * commit_document rewrites it, where_are_we parses it; the prose build
  * record beside it is never parsed.
  */
@@ -103,7 +102,7 @@ export function readHeaderVersion(plan: string): number {
   return match ? Number(match[2]) : 0;
 }
 
-/** Sets the header's `version:` line, adding one under the title when absent (work 040 "Version marker"). */
+/** Sets the header's `version:` line, adding one under the title when absent. */
 export function writeHeaderVersion(plan: string, version: number): string {
   if (VERSION_LINE.test(plan)) return plan.replace(VERSION_LINE, (_, prefix: string) => `${prefix}${version}`);
   const title = plan.match(/^# .*$/m);

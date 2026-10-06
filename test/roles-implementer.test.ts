@@ -145,6 +145,6 @@ test("extra payload fields are ignored, not rendered", () => {
   assert.deepEqual(parsed.assignment, BUILD);
 });
 
-test("the github connection pushes code and reads PRs, nothing more (work 040 S3 row)", () => {
+test("the github connection pushes code and reads PRs, nothing more", () => {
   assert.deepEqual(github.provider.permissions, { contents: "write", pull_requests: "read" });
 });

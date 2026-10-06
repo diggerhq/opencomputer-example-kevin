@@ -1,8 +1,7 @@
 /**
  * The lead's writes through git on the computer: one cached clone per repo
- * under `runtime.cloneRoot`, fetched before every use (design 019 §8
- * "Integration"). Only `agent/<slug>`, `agent/<slug>--*` and a docs repo's
- * default branch are ever pushed (§11 boundaries); callers check the branch.
+ * under `runtime.cloneRoot`, fetched before every use. Only `agent/<slug>`, `agent/<slug>--*` and a docs repo's
+ * default branch are ever pushed; callers check the branch.
  */
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -35,7 +34,7 @@ export async function ensureClone(repo: string): Promise<string> {
   return dir;
 }
 
-/** Refuses a clone with local changes (work 040 "Integrate": `git status --porcelain` first). */
+/** Refuses a clone with local changes (`git status --porcelain` must be empty). */
 export async function requireClean(dir: string): Promise<void> {
   const status = (await git(dir, ["status", "--porcelain"])).trim();
   if (status) {
@@ -105,8 +104,8 @@ export type MergeResult =
 
 /**
  * Merges `agent/<slug>--<stream>` into `agent/<slug>` with `--no-ff` and
- * pushes. On a conflict the merge is aborted and reported, never resolved
- * (design 019 §8): `otherStream` is the stream whose changes touch the same
+ * pushes. On a conflict the merge is aborted and reported, never resolved:
+ * `otherStream` is the stream whose changes touch the same
  * files, or `agent/<slug>` itself when no stream does.
  */
 export async function mergeStream(repo: string, slug: string, stream: string): Promise<MergeResult> {

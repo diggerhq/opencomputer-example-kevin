@@ -5,8 +5,7 @@ import { mergeStream } from "./lib/git";
 import { SLUG } from "./lib/assignment";
 
 /**
- * Merges one stream into the work branch (work 040 "Integrate"; design 019
- * §8): fetch, refuse a clone whose `git status --porcelain` is not empty,
+ * Merges one stream into the work branch: fetch, refuse a clone whose `git status --porcelain` is not empty,
  * `merge --no-ff agent/<slug>--<stream>` into `agent/<slug>`, push. On a
  * conflict: abort and report `{ stream, files, otherStream }`; never resolve.
  */

@@ -7,7 +7,7 @@ import { ROLES } from "./process/roles";
 /** Puts the read-only GitHub connection in the deployment manifest (connections deploy by import). */
 export const CONNECTIONS = [github] as const;
 
-/** design 019 §11 "reviewer brief": the fenced JSON inside the consult prompt. */
+/** The reviewer brief: the fenced JSON inside the consult prompt. */
 export interface ReviewerBrief {
   artifact: "design" | "build";
   slug: string;
@@ -24,7 +24,7 @@ const NAME = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const REF = /^(?!-)(?!\/)(?!.*\.\.)(?!.*\/\/)[A-Za-z0-9._\/-]{1,200}(?<![./])$/;
 const HTTPS = /^https:\/\/[^\s\x00-\x1f\x7f]{1,500}$/;
 
-/** design 019 §11 "consult brief (reviewer side)": `{ source: "subagent", payload: { kind: "consult", … }, text }`. */
+/** A consult as the reviewer receives it: `{ source: "subagent", payload: { kind: "consult", … }, text }`. */
 export function isConsult(input: Readonly<AgentInput>): boolean {
   const payload = input.payload;
   return (
@@ -98,7 +98,7 @@ const NOT_A_CONSULT =
   "# Not a consult\n\nThis input is not a consult from Kevin's lead. Reply with one line and do nothing else: \"I review only on the lead's request.\"";
 
 /**
- * Kevin's reviewer (design 019 §5): the brief arrives as a consult prompt;
+ * Kevin's reviewer: the brief arrives as a consult prompt;
  * findings go back as the consult answer. It has no code tools and a
  * read-scoped GitHub token (connections/github.ts), and only a consult
  * turn gets the shell.
@@ -107,15 +107,12 @@ export default function Reviewer() {
   useModel("anthropic/claude-fable-5.1");
   const input = useInput();
   if (!isConsult(input)) return [ROLES.reviewer, NOT_A_CONSULT].join("\n\n");
-  // The shell is the only way to read on Workerd (no file tools; design 019
-  // §5 "its shell is told not to write"), so it is selected, alone: no
+  // The shell is the only way to read on Workerd (no file tools; the
+  // instructions tell it not to write), so it is selected, alone: no
   // defined tool, no `ask`, no `consult`.
-  // GAP(K16): the platform has no read-only shell and mounts the lead's
-  // /workspace read-write into the consult member's computer (blue
-  // src/workerd-runtime/index.ts sandbox acquisition: workspace.id =
-  // shared_workspace_session_id, no read-only flag). GitHub writes are
-  // refused by the read-scoped token; local writes are held back by the
-  // instructions alone.
+  // The platform has no read-only shell, and a consult member shares the
+  // lead's /workspace read-write. GitHub writes are refused by the
+  // read-scoped token; local writes are held back by the instructions alone.
   useTool("sandbox_exec");
   useConnection(github);
   return [reviewerInstructions(), renderBrief(parseBrief(input.text))].join("\n\n");

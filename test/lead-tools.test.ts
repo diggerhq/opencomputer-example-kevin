@@ -396,7 +396,7 @@ function githubFor(state: object, options: { running?: boolean } = {}) {
   });
 }
 
-test("where_are_we: finds the work by session id across granted repos and returns the design 019 §11 shape", async () => {
+test("where_are_we: finds the work by session id across granted repos and returns the documented shape", async () => {
   const state = {
     version: 4,
     leadSessionId: LEAD_SESSION,

@@ -7,14 +7,13 @@ import { commitDocument, planLocation, readPlan } from "./lib/documents";
 import { ensureRemoteBranch } from "./lib/git";
 import { type KevinState, readHeaderVersion, type StreamState } from "./lib/state";
 
-/** `kevin:<leadSessionId>:<stream>:<attempt>`: organisation-wide, so never slug-based (design 019 §12 "Fan-out"). */
+/** `kevin:<leadSessionId>:<stream>:<attempt>`: idempotency keys are organisation-wide, so never slug-based. */
 export function idempotencyKey(leadSessionId: string, stream: string, attempt: number): string {
   return `kevin:${leadSessionId}:${stream}:${attempt}`;
 }
 
 /**
- * Starts implementers (work 040 "Delegate"; design 019 §11 sequence step 5,
- * §12 "Fan-out"), in this order and no other:
+ * Starts implementers, in this order and no other:
  *   1. ensure this lead session's subscription to implementer outcomes —
  *      before the first delegate of any kind, since subscriptions are
  *      captured when a turn is admitted;
