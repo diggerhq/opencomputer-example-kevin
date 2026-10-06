@@ -8,7 +8,7 @@ import { defineConnection, secretHeader, useSecret } from "@opencomputer/agent";
  * path: `opencomputer.fetch("/api/managed-agents/sessions", …)`.
  */
 export const opencomputer = defineConnection({
-  id: "opencomputer",
+  id: "management-api",
   origin: "https://app.opencomputer.dev",
   pathPrefix: "/api/managed-agents/",
   methods: ["GET", "POST", "DELETE"],
