@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "generate": "node --import tsx scripts/generate.ts",
+    "secret": "node --import tsx scripts/set-secret.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test test/*.test.ts",
     "doctor": "opencomputer doctor",
