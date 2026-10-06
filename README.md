@@ -41,13 +41,10 @@ version; anything else is conversation.
 
 ## How it works
 
-```
-   you ──Slack thread──▶ lead (Fable) ──delegate──▶ implementer ×N (Opus)   each on its own
-            ▲               │  ▲   ▲                    │                   computer + branch
-            │               │  │   └──outcome event─────┘
-            └───reply───────┘  └──consult──▶ reviewer (Fable) ──answer──▶ lead
-                                 git: agent/<slug>, agent/<slug>--<stream>, .agents/{design,work}/<slug>.md
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/how-it-works-dark.svg">
+  <img alt="Stages left to right (brief, design, plan, build, review, PR); you, the lead, the builders, the reviewer and GitHub top to bottom. One word from you starts each stage; the lead writes the design and plan to the repo, fans builders out only at build and merges what they return, consults the reviewer, and opens the PR." src="docs/how-it-works-light.svg" width="100%">
+</picture>
 
 - **Three agents, fresh contexts.** The lead owns the thread and the documents and never writes product code. Implementers get one stream of the agreed plan and nothing of the conversation. The reviewer reads the design or the integrated branch, never the thread.
 - **One artifact, successive forms.** Brief → design file → plan file → branch + PR → production. Each form removes the uncertainty cheapest to remove there, so the next is built once.
