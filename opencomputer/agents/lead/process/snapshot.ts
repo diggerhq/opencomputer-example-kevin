@@ -37,7 +37,7 @@ export const LABEL_HINTS: Record<string, string> = {
 };
 
 // 019 §4 Line 1; work 040 contracts "Version marker"
-export const VERSION_MARKER = "*<slug>* · <stage> · v<n>";
+export const VERSION_MARKER = "**<slug>** · <stage> · v<n>";
 
 const STAGE_TITLES: Record<string, string> = {
   brief: "Brief",
@@ -65,11 +65,33 @@ export function labelLines(): string {
 
 // 019 §4 "Snapshot format in Slack"; work 040 contracts "Version marker", "Mentions"
 export const SNAPSHOT_FORMAT = `# Snapshot format (every version message)
-- Line 1, the version marker: \`${VERSION_MARKER}\`. A message without it is conversation. n = the higher of your last marker in this thread and \`where_are_we.version\`; a new version is n+1; a "status?" re-post with nothing changed keeps n. When a document commit carries a new version, pass that n to \`commit_document\` so the plan header holds it.
-- Body: bold labels (\`*What*\`), ≤3 bullets each, in the stage's order below. Never a table (Slack flattens them). Markdown ≤12 000 chars.
-- Links line (only links that exist): branch · design · plan · PR.
-- Last line: the call to action with options inline, e.g. \`Next: *design* · *revise* · *build now*\`, or the one or two questions to answer. Never "see the document".
-- Labels and line budgets per stage (marker to Next line):
+Slack renders your text as standard Markdown (a markdown block): \`**bold**\`, \`-\` bullets, \`---\` rules and code spans work; a single \`*word*\` is italic, never use it for emphasis. Never a table (Slack flattens them). Keep the whole message ≤12 000 chars.
+- Line 1, the version marker: \`${VERSION_MARKER}\` (bold slug). A message without it is conversation. n = the higher of your last marker in this thread and \`where_are_we.version\`; a new version is n+1; a "status?" re-post with nothing changed keeps n. When a document commit carries a new version, pass that n to \`commit_document\` so the plan header holds it.
+- Then a blank line, then the sections in the stage's order below, a blank line between sections.
+- A section is its label in bold on its own line (\`**What**\`) followed by 1–3 bullets, each one line; a section whose content is one short phrase stays on one line (\`**Steps** build now → PR\`). Two short one-line sections may sit on consecutive lines without a blank line between them.
+- Then a blank line, \`---\`, and the last line: \`**Next:**\` with the reply words as code spans separated by middle dots, e.g. \`**Next:** \\\`design\\\` · \\\`revise\\\` · \\\`build now\\\`\`, or the one or two questions to answer, each on its own line. Never "see the document".
+- Links (only those that exist) go on one line just above the rule: \`branch · design · plan · PR\` as Markdown links.
+- Budgets count content lines only (not blank lines or the rule), marker to Next:
 ${labelLines()}
 - A version may cross a stage: the design version is the design preview's labels plus the file's link; the plan version opens with a one-line design summary.
-- Nesting: a preview uses the labels of the document it precedes; the design opens with the brief; the plan opens with the design summary; the PR description is the plan grown up.`;
+- Nesting: a preview uses the labels of the document it precedes; the design opens with the brief; the plan opens with the design summary; the PR description is the plan grown up.
+- Example (brief):
+**csv-export-quoting** · brief · v1
+
+**What**
+- Quote every field that needs it in \`GET /customers.csv\`; parse what the writer writes; serve the file as a download.
+
+**Why**
+- "Smith, Jr., John" shifts its row by two columns today.
+
+**In** diggerhq/opencomputer-fixture-acme-service · \`src/csv.js\`, \`src/server.js\`, tests
+**Out** a CSV library · changing the customer shape
+
+**Unknowns**
+- L1: should the download name be fixed or dated (assumed fixed, \`customers.csv\`)
+- L2: how the current reader handles quotes at all
+
+**Steps** design → plan → build → review → PR; two files, two streams
+
+---
+**Next:** \`design\` · \`revise\` · \`build now\` — mention me in replies`;
