@@ -234,9 +234,10 @@ export default function Lead() {
 }
 ```
 
-The instructions come from `process/`: the philosophy, the snapshot
-format with its labels and line budgets, what each stage produces, and the
-report formats the builders and the reviewer answer in.
+The instructions come from `process/`: why the method works the way it
+does, the platform mechanics and boundaries each role must keep, what each
+stage is for, the report formats the builders and the reviewer answer in,
+and reference shapes for Slack messages that the lead fits to the work.
 
 ## Where to change it
 
