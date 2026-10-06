@@ -1,8 +1,7 @@
 # Kevin: product development agent for Slack
 
-A [serverless agent on OpenComputer](https://docs.opencomputer.dev/agents/overview)
-that takes a piece of work from one sentence in a Slack thread to a reviewed
-pull request, one stage at a time.
+Takes a piece of work from one sentence in a Slack thread to a reviewed pull
+request, one stage at a time.
 
 The first ask is never the whole story, and a coding agent that runs with it
 meets its first correction at the PR. Kevin shows the whole piece of work at
@@ -20,6 +19,8 @@ Slack is the interface and GitHub the store; the design and the plan land in
 the repo beside the code. Three agents, a folder of process text and five
 tools; nothing else is deployed. A one-line fix skips the documents, not the
 gates.
+
+<sub>Built with [OpenComputer serverless agents](https://docs.opencomputer.dev/agents/overview).</sub>
 
 ## What it looks like
 
