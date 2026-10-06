@@ -1,23 +1,20 @@
-# Kevin: an engineering teammate in Slack
+# Kevin: staged coding agent for Slack
 
-Mention Kevin in a thread with one sentence and work with it the way you
-would with a colleague: it comes back with a brief you correct in a word,
-then a design, then a plan, and only then code — built in parallel,
-reviewed independently, and handed back as a draft pull request written to
-be read in one pass. A one-line fix skips the documents, not the gates.
+One sentence in a Slack thread; Kevin answers with a brief. Reply in a
+word and it moves on: design, plan, then code — built in parallel,
+reviewed independently, returned as a draft pull request. A one-line fix
+skips the documents, not the gates.
 
-**How it differs from a background coding agent.** You are not handing off
-a task and waiting for a PR. The work takes shape in stages, each one a
-short message that shows the whole thing at its current resolution — like
-a progressive image: blurry and cheap to correct first, sharp and expensive
-last. You steer where steering is cheap; the agent builds once, against a
-plan you have already agreed to.
+**Not a background agent.** Nothing is handed off and awaited. The work
+takes shape in stages, each one a short message showing the whole thing at
+its current resolution — blurry and cheap to correct first, sharp and
+expensive last. Steering happens where it is cheap; code is written once,
+against an agreed plan.
 
-**What you get.**
-- A conversation, not a queue: every step is one message you answer in a word.
-- Documents that stay: the design and the plan land in your repo beside the code.
-- Parallel builders with fresh contexts, an independent review, and a PR description that respects your time.
-- Your process, in files you can read and change: three agents, a folder of process text, five tools, on [OpenComputer](https://docs.opencomputer.dev/agents/overview). Slack is the interface, GitHub is the store; nothing else is deployed.
+- Every step is one message, answered in a word.
+- The design and the plan land in the repo beside the code.
+- Parallel builders with fresh contexts; an independent review; a PR description written to be read in one pass.
+- The process is files: three agents, a folder of process text, five tools, on [OpenComputer](https://docs.opencomputer.dev/agents/overview). Slack is the interface, GitHub the store; nothing else is deployed.
 
 ## What it looks like
 
