@@ -15,12 +15,12 @@ the pull request arrives with a description meant to be read once.
   <img alt="Stages left to right (brief, design, plan, build, review, PR); you, the lead, the builders, the reviewer and GitHub top to bottom. One click from you starts each stage; the lead writes the design and plan to the repo, fans builders out only at build and merges what they return, consults the reviewer on the build (and on the design when asked), and opens the PR." src="docs/how-it-works-light.svg" width="100%">
 </picture>
 
-Slack is the interface and GitHub the store; the design and the plan land in
-the repo beside the code. Three agents, a folder of process text and five
-tools; nothing else is deployed. A one-line fix skips the documents, not the
-gates.
-
-<sub>Built with [OpenComputer serverless agents](https://docs.opencomputer.dev/agents/overview).</sub>
+You drive it from the thread with buttons, or a reply when a button isn't
+enough. The design and the plan are committed to the repo next to the code;
+a one-line fix skips them and goes from the brief straight to the build.
+Kevin is three agents and a folder of process text, built with
+[OpenComputer serverless agents](https://docs.opencomputer.dev/agents/overview),
+with nothing else to deploy.
 
 ## What it looks like
 
