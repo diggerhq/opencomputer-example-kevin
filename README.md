@@ -5,11 +5,11 @@ word and it moves on: design, plan, then code — built in parallel,
 reviewed independently, returned as a draft pull request. A one-line fix
 skips the documents, not the gates.
 
-**Not a background coding agent.** Nothing is handed off and awaited. The work
-takes shape in stages, each one a short message showing the whole thing at
-its current resolution — blurry and cheap to correct first, sharp and
-expensive last. Steering happens where it is cheap; code is written once,
-against an agreed plan.
+**Staged, not fire-and-forget.** It works in the background like any
+coding agent, but the work surfaces in stages: each one a short message
+showing the whole thing at its current resolution — blurry and cheap to
+correct first, sharp and expensive last. Steering happens where it is
+cheap; code is written once, against an agreed plan.
 
 - Every step is one message, answered in a word.
 - The design and the plan land in the repo beside the code.
