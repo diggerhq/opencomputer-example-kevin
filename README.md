@@ -52,15 +52,14 @@ typed reply (with an @mention) answers it just as well.
 | PR | opens a draft pull request with a description made to be read once | `ready`; you merge |
 | Live | on your word or a merged PR: what shipped, what was deferred, what to watch | the next piece, in a new thread |
 
-## Under the hood
+## How it works
 
-- **Three agents, fresh contexts.** The lead owns the thread and the documents and never writes product code. Builders get one stream of the agreed plan and nothing of the conversation. The reviewer reads the design or the integrated branch, never the thread.
-- **One artifact, successive forms.** Brief → design file → plan file → branch + PR → production. Each form removes the uncertainty cheapest to remove there, so the next is built once.
-- **State is git.** Nothing is kept on a computer between turns. `where_are_we` rebuilds the picture from branches, documents, the PR and a `kevin-state` block in the plan at every turn; `status?` works a week later.
-- **Fan-out is the platform API.** `delegate` creates builder sessions through an HTTP connection carrying the project secret and subscribes the lead to their outcomes; each finished stream arrives as an input. The reviewer is reached with `consult`, whose answer arrives as the lead's next input.
-- **Gates are questions.** The lead ends a stage with `ask(question, options)`; the platform renders a button per option in the thread and delivers the click, or a typed reply, as the next input.
-- **Tools by input source.** The agent function runs before any tool, so it cannot know the stage; it knows where the input came from. A builder's outcome may record, merge and re-dispatch, never open the PR, call the reviewer or ask.
-- **Guidance, not a harness.** `process/` explains the why, the concepts and the boundaries; message shapes are reference material the model fits to the work, so it gets better as the models do.
+- **Agents.** The lead talks to you, writes the documents and merges branches; it never writes product code. Each builder gets one stream of the plan and none of the conversation, so it builds what the plan says rather than what was said along the way. The reviewer reads the design or the merged branch without seeing the thread.
+- **State.** Each turn starts by reading the work back from GitHub: the branches, the documents, the PR, and a small JSON block in the plan (`kevin-state`) that records the builder sessions. The lead's clone on its computer is only a cache. That is why `status?` still works a week later.
+- **Delegation.** `delegate` starts builder sessions through the OpenComputer API with a project API key stored as a secret, and subscribes the lead to their results. When a builder finishes, its report reaches the lead as a new input. The lead asks the reviewer with `consult` and gets the answer the same way.
+- **Questions.** At the end of a stage the lead calls `ask` with the options. Slack shows them as buttons, and the click, or a typed reply, comes back as the next input.
+- **Tool selection.** The agent function runs before any tool, so it can't know the stage, only where the input came from. When a builder's report comes in, the lead can record it, merge and re-dispatch, but it can't open the PR, call the reviewer or ask you anything.
+- **Process text.** `process/` explains the method and its limits to the model in prose. The message formats in it are examples the model adapts, so a two-line fix gets a two-line reply.
 
 ## Platform features it exercises
 
