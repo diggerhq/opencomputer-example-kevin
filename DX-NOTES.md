@@ -1,6 +1,6 @@
 # Gotchas
 
-What tripped us up building this example, so it does not trip you. Versions:
+Setup and authoring constraints for
 `@opencomputer/agent` 0.9.0, `@opencomputer/cli` 0.7.16.
 
 **A project secret is not a project-scoped API key.** The dashboard's

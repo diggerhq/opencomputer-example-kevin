@@ -13,9 +13,6 @@ project, with Slack for conversation and GitHub for documents and code.
   <img alt="Kevin's workflow: you steer the brief, design and plan; the lead coordinates builders and a reviewer, then opens a pull request." src="docs/how-it-works-light.svg" width="100%">
 </picture>
 
-**Experimental:** brief, status and design preview verified live on
-2026-10-06. The full build → review → PR path still needs an end-to-end run.
-
 ## In a thread
 
 An illustrative exchange:
@@ -176,8 +173,7 @@ a separate Slack bot on the project's Production lead row.
 - **Stop is cooperative:** Kevin records the request and acts on the
   builder's next report; it does not interrupt a running command.
 - **Reviews can be quiet for up to ten minutes.** Messages sent meanwhile
-  are held for the lead's next reply. `consult` is not yet publicly documented;
-  Kevin reports when review is unavailable.
+  are held for the lead's next reply. Kevin reports when review is unavailable.
 - **Each thread has one owner.** Parallel Slack threads currently receive
   each other's builder outcomes and discard unrelated ones, adding model
   turns. A two-builder task normally involves a lead, two builders and a
