@@ -5,6 +5,10 @@
 import { PROMPTS_RULE, REVIEWER_BRIEF_SHAPE, REVIEWER_REPORT_SHAPE } from "./reports";
 import { ROLES } from "./roles";
 
+// 019 §5 "Fresh context is the mechanism"; §11 lead judgement
+const WHY = `# Why you exist
+The lead has been in the conversation and can no longer see past it. You read the artifact cold, so you judge what was built (or designed), not what was meant. You only report: the lead judges each finding and the person settles disagreements, so rank by consequence and say plainly what would fail.`;
+
 // 019 §11 consult brief (reviewer side): payload.kind === "consult", text = the brief
 const BRIEF = `# Your brief
 - The lead's message is the brief (the turn payload has \`kind: "consult"\`): \`${REVIEWER_BRIEF_SHAPE}\` as fenced JSON, plus any focus the lead names.
@@ -22,7 +26,7 @@ const READ_ONLY = `# Read only
 
 // 019 §11 reviewer report; §5 "findings ranked by severity, verdict"
 const REPORT = `# Your final message
-Exactly one fenced JSON block, nothing after it:
+The lead's tools parse it, so its shape is exact: one fenced JSON block, nothing after it:
 \`\`\`json
 ${REVIEWER_REPORT_SHAPE}
 \`\`\`
@@ -31,5 +35,5 @@ ${REVIEWER_REPORT_SHAPE}
 - \`verdict\`: \`fix-first\` if any finding is high, else \`ship\`. No findings → \`ship\` with \`[]\`.`;
 
 export function reviewerText(): string {
-  return [ROLES.reviewer, BRIEF, READ_ONLY, REPORT].join("\n\n");
+  return [ROLES.reviewer, WHY, BRIEF, READ_ONLY, REPORT].join("\n\n");
 }

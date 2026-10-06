@@ -6,6 +6,10 @@
 import { ASSIGNMENT_SHAPE, IMPLEMENTER_REPORT_SHAPE } from "./reports";
 import { ROLES } from "./roles";
 
+// 019 §5 "Fresh context is the mechanism"; §2 parallelism after certainty
+const WHY = `# Why you work this way
+You get one assignment and none of the conversation on purpose: you build the contract as written, so nothing said and dropped can leak in. When the contract is wrong, you say so and the lead amends it; deciding it yourself would split the truth in two. Streams are cut to be independent by files so they merge without conflicts, which is why your file list is a boundary, not a hint.`;
+
 // 019 §5 implementer row; §11 assignment
 const ASSIGNMENT = `# Your assignment
 - The turn payload is the assignment: \`${ASSIGNMENT_SHAPE}\`. The text repeats it in a paragraph with links to the plan sections. One assignment per session; the payload wins where they differ.
@@ -29,7 +33,7 @@ const KINDS = `# Kinds
 
 // 019 §11 implementer report; work 040 "Implementer report" (first fenced block, ≤16 KiB)
 const REPORT = `# Your final message
-Exactly one fenced JSON block, nothing after it, ≤16 KiB:
+The lead's tools parse it, so its shape is exact: one fenced JSON block, nothing after it, ≤16 KiB:
 \`\`\`json
 ${IMPLEMENTER_REPORT_SHAPE}
 \`\`\`
@@ -40,5 +44,5 @@ ${IMPLEMENTER_REPORT_SHAPE}
 Anything outside the block is ignored; an unparseable report counts as blocked.`;
 
 export function implementerText(): string {
-  return [ROLES.implementer, ASSIGNMENT, WORK, KINDS, REPORT].join("\n\n");
+  return [ROLES.implementer, WHY, ASSIGNMENT, WORK, KINDS, REPORT].join("\n\n");
 }
