@@ -1,0 +1,24 @@
+{
+  "name": "opencomputer-example-kevin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "node --import tsx scripts/generate.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts",
+    "doctor": "opencomputer doctor",
+    "check": "npm run generate -- --check && npm run typecheck && npm test && npm run doctor",
+    "deploy": "npm run generate && opencomputer deploy"
+  },
+  "dependencies": {
+    "@opencomputer/agent": "^0.9.0"
+  },
+  "devDependencies": {
+    "@opencomputer/cli": "^0.7.16",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  },
+  "engines": { "node": ">=22.0.0" }
+}
