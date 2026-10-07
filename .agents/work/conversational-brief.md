@@ -3,12 +3,12 @@
 - thread: `1791387966.516249` (#dev)
 - lead session: `ses_ee8fe53c9ffddlDU2HK8uide4C`
 - repo: `diggerhq/opencomputer-example-kevin` · branch `agent/conversational-brief` · base `main`
-- version: 3
+- version: 4
 - design: `.agents/design/conversational-brief.md`
 
 ```kevin-state
 {
-  "version": 3,
+  "version": 4,
   "leadSessionId": "ses_ee8fe53c9ffddlDU2HK8uide4C",
   "threadId": "1791387966.516249",
   "streams": []
