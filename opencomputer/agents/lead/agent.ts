@@ -3,7 +3,7 @@ import { type AgentInput, useConnection, useInput, useModel, useTool } from "@op
 import { github } from "./connections/github";
 import { opencomputer } from "./connections/opencomputer";
 import { leadInstructions } from "./process/instructions";
-import { BRIEF_TURN } from "./process/lead";
+import { OPENING_TURN } from "./process/lead";
 import { commitDocument } from "./tools/commit-document";
 import { delegate } from "./tools/delegate";
 import { integrate } from "./tools/integrate";
@@ -49,15 +49,16 @@ export function turnKind(input: AgentInput): TurnKind {
  * Workerd renders with empty session data (`state: {}`), so
  * `useSessionData` cannot carry "briefed". A channel turn therefore selects
  * the full lead tool set and lets the model decide from its own transcript:
- * no earlier message of its own → the brief, no tool called. The computer is
- * lazy (leased at the first command or code tool, not by selection), so a
- * brief that calls nothing still leases nothing. Once the input says which
+ * no earlier message of its own → the opening turn (a brief with no tool
+ * called, an answer with at most one read-only lookup, or one question). The
+ * computer is lazy (leased at the first command or code tool, not by
+ * selection), so a brief that calls nothing still leases nothing. Once the input says which
  * message started the thread (`conversationId` equal to the message's own
  * id), this becomes `leadInstructions({ source: "channel", firstTurn })` with
  * nothing selected on the first turn.
  */
 export const TURN_ROUTER = `# Which turn this is
-The platform does not tell you whether this thread is new. Look at the conversation: if it holds no earlier message of yours, this turn is the brief. Then follow "This turn: a new thread. Write the brief." (at the end), call no tool at all (no \`where_are_we\`, no shell: the brief needs no computer), and ignore "This turn: the person wrote in the thread". Otherwise ignore the brief section and follow "This turn: the person wrote in the thread".`;
+The platform does not tell you whether this thread is new. If the conversation holds no earlier message of yours, this is the opening turn: follow "This turn: the thread's opening message" (at the end) and ignore "This turn: the person wrote in the thread". Otherwise ignore the opening section and follow "This turn: the person wrote in the thread".`;
 
 const OTHER_REPLY =
   "Reply with one line and call no tool: \"I take work from a Slack thread — mention me there with one sentence.\"";
@@ -152,7 +153,7 @@ export default function Lead() {
     leadInstructions({ source: "channel", firstTurn: false }),
     threadLine(input),
     answeredBlock(input),
-    BRIEF_TURN,
+    OPENING_TURN,
   ]
     .filter(Boolean)
     .join("\n\n");

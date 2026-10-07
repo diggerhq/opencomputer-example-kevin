@@ -145,7 +145,8 @@ in your Slack workspace and GitHub repositories.
    Create Slack bot**. Follow the [Slack setup](https://docs.opencomputer.dev/agents/slack)
    to create and authorize the bot using an App configuration access token.
    In your channel, `/invite @Kevin`, then mention it with a request and
-   repository name. Its first response is a brief, before any code changes.
+   repository name. Its first response is a brief — or an answer, when you ask
+   about Kevin itself — before any code changes.
 
 ## Make it yours
 

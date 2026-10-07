@@ -10,7 +10,6 @@
  */
 import { implementerText } from "./implementer";
 import {
-  BRIEF_TURN,
   CHANNEL_TURN_START,
   CONSULT_ANSWER_TURN,
   CONSULTING,
@@ -18,7 +17,7 @@ import {
   EVENT_TURN,
   FAILURES,
   MECHANICS,
-  
+  OPENING_TURN,
   REPOS_AND_DOCUMENTS,
   STAGES,
 } from "./lead";
@@ -27,16 +26,16 @@ import { reviewerText } from "./reviewer";
 import { ROLES } from "./roles";
 import { DOCUMENT_SHAPES, SHAPES } from "./shapes";
 
-export { snapshotBudgets, snapshotLabels, VERSION_MARKER } from "./shapes";
+export { VERSION_MARKER } from "./shapes";
 export { TOOL_NAMES } from "./reports";
 
 export type LeadInput = { source: "channel" | "event" | "subagent"; firstTurn: boolean };
 
 /** The lead's full instruction text for one turn kind. The turn-specific block comes first. */
 export function leadInstructions(input: LeadInput): string {
-  // work 040 "Stage detection": a channel turn with no prior lead message is the brief; no where_are_we, no computer
+  // work 040 "Stage detection": a channel turn with no prior lead message is the opening turn: answer, brief or one question
   if (input.source === "channel" && input.firstTurn) {
-    return [ROLES.lead, BRIEF_TURN, MECHANICS, PHILOSOPHY, SHAPES].join("\n\n");
+    return [ROLES.lead, OPENING_TURN, MECHANICS, PHILOSOPHY, SHAPES].join("\n\n");
   }
   // 019 §11 sequence step 6: event turns record and merge only
   if (input.source === "event") {

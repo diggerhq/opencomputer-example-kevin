@@ -14,8 +14,6 @@ import {
   type LeadInput,
   leadInstructions,
   reviewerInstructions,
-  snapshotBudgets,
-  snapshotLabels,
   TOOL_NAMES,
   VERSION_MARKER,
 } from "../process/instructions";
@@ -27,6 +25,7 @@ import {
   REVIEWER_BRIEF_SHAPE,
   REVIEWER_REPORT_SHAPE,
 } from "../process/reports";
+import { CHANNEL_TURN_START, MECHANICS, OPENING_TURN, STAGES } from "../process/lead";
 import { DOCUMENT_SHAPES, SHAPES } from "../process/shapes";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -108,23 +107,56 @@ test("boundaries: each role has its never-list", () => {
   assert.match(reviewer, /Run nothing/);
 });
 
-test("turn order: the channel turn starts from where_are_we; the brief turn calls nothing", () => {
+test("turn order: the channel turn starts from where_are_we; the opening turn triages", () => {
   const channel = leadInstructions(CHANNEL);
   assert.ok(channel.startsWith("You are Kevin's lead"));
   assert.match(channel, /call `where_are_we` before anything else/);
   assert.ok(channel.indexOf("# This turn") < channel.indexOf("# Stages"));
   const brief = leadInstructions(BRIEF);
-  assert.match(brief, /# This turn: a new thread\. Write the brief\./);
-  assert.match(brief, /No lookups this turn/);
+  assert.match(brief, /# This turn: the thread's opening message/);
+  assert.match(brief, /calling no tool — a brief needs no computer and promises no lookups/);
   assert.doesNotMatch(guidance(brief), /Call `where_are_we`/);
+});
+
+test("opening turn: three outcomes, two allowed read-only lookups, no clones", () => {
+  assert.ok(leadInstructions(BRIEF).includes(OPENING_TURN));
+  assert.match(OPENING_TURN, /- \*\*Work\*\*[^\n]*write the brief, version 1/);
+  assert.match(OPENING_TURN, /- \*\*A question about you\*\*[^\n]*answer it/);
+  assert.match(OPENING_TURN, /- \*\*Unclear\*\*: one question, no brief, no tool/);
+  assert.match(OPENING_TURN, /`gh api installation\/repositories`/);
+  assert.match(OPENING_TURN, /what work exists \(`where_are_we`\)/);
+  assert.match(OPENING_TURN, /run that one read-only lookup/);
+  assert.match(OPENING_TURN, /never clone or read code before there is work/);
+});
+
+test("stages: the stage model opens the block; each stage says what it is for", () => {
+  assert.ok(STAGES.startsWith("# Stages\nA thread carries one thing"));
+  assert.ok(leadInstructions(CHANNEL).includes(STAGES));
+  for (const stage of ["Brief", "Design", "Plan", "Build", "Spike", "Status", "PR", "Live"]) {
+    assert.match(STAGES, new RegExp(`- \\*\\*${stage}\\*\\* — so `), stage);
+  }
+});
+
+test("mechanics: a question does not hold the thread; no PR link before open_pr returns one", () => {
+  assert.match(MECHANICS, /A question does not hold the thread/);
+  assert.match(MECHANICS, /an "Open question:" line naming the question and its options/);
+  assert.match(MECHANICS, /re-ask only if the gate is still open/);
+  assert.match(MECHANICS, /Each thread wakes only for its own builders/);
+  assert.match(MECHANICS, /A PR exists once `open_pr` has returned its link, and not before/);
+  assert.match(MECHANICS, /no PR link is written that did not come back from the tool/);
+  for (const [kind, input] of Object.entries(KINDS)) assert.ok(leadInstructions(input).includes(MECHANICS), kind);
+});
+
+test("channel turn: a question gets a real answer, and the gate is re-asked only if still open", () => {
+  assert.match(CHANNEL_TURN_START, /A question — about the work, an option, or you — gets a real answer first/);
+  assert.match(CHANNEL_TURN_START, /the gate is asked again only if the answer leaves it open, in the same reply/);
 });
 
 test("ask: the reply is written before the question; non-work messages get a plain answer", () => {
   const channel = leadInstructions(CHANNEL);
-  assert.match(channel, /`ask` ends the turn and posts only the text written before it/);
-  assert.match(channel, /write the whole reply first/);
+  assert.match(channel, /The text you write before `ask` posts above the question/);
   assert.match(channel, /a plain answer without tools/);
-  assert.match(leadInstructions(ANSWER), /write the whole reply first/);
+  assert.match(leadInstructions(ANSWER), /The text you write before `ask` posts above the question/);
 });
 
 test("failures: every lead turn with tools tells the person plainly and keeps raw errors out of the thread", () => {
@@ -137,12 +169,10 @@ test("failures: every lead turn with tools tells the person plainly and keeps ra
   assert.match(leadInstructions(EVENT), /always one line, with the next step, for a stream that failed or blocked/);
 });
 
-test("the build reply is the same with or without outcomes posting; the turn ends there", () => {
-  assert.ok(
-    leadInstructions(CHANNEL).includes(
-      "\"<N> on it; I'll report as streams land where the platform lets me; mention me any time for status\". End there: no question, no consult.",
-    ),
-  );
+test("the build reply says what is running, links the plan and shows progress; the turn ends there", () => {
+  const channel = leadInstructions(CHANNEL);
+  assert.match(channel, /say what is running — each stream in a few words — link the plan, show progress \(`0 of 2 landed`\)/);
+  assert.match(channel, /End there: no question, no consult\./);
 });
 
 // ---- Concepts: present, not phrased ----
@@ -198,26 +228,22 @@ test("sandbox facts: the implementer is told the computer's defaults, as facts, 
 
 // ---- Shapes: reference material, fitted to the work ----
 
-test("shapes: the reference module carries the snapshot labels and sizes", () => {
-  assert.deepEqual(snapshotLabels, {
-    brief: ["What", "Why", "In", "Out", "Unknowns", "Steps", "Questions", "Next"],
-    designPreview: ["Kernel", "Constraints", "Components", "Contracts", "Risks", "Decisions", "Unknowns left", "Next"],
-    planPreview: ["Streams", "Order", "Checks", "Unknowns left", "Next"],
-    status: ["Stage", "Landed", "Running", "Blocked", "Next"],
-    review: ["Verdict", "Findings", "Folded", "Next"],
-    pr: ["Title", "What / why", "Read first", "Verified", "Remains", "Next"],
-    live: ["Shipped", "See it", "Deferred", "Watch", "Next"],
-  });
-  assert.deepEqual(snapshotBudgets, { brief: 12, designPreview: 15, planPreview: 15, status: 10, review: 12, pr: 15 });
-  for (const labels of Object.values(snapshotLabels)) {
-    assert.ok(SHAPES.includes(labels.filter((label) => label !== "Next").join(" · ")));
+test("shapes: no per-stage label list and no line budgets anywhere in the lead text", () => {
+  for (const [kind, input] of Object.entries(KINDS)) {
+    const text = leadInstructions(input);
+    assert.doesNotMatch(text, /~\d+ lines/, `${kind}: no line budget`);
+    assert.doesNotMatch(text, /What · Why · In · Out/, `${kind}: no label list`);
+    assert.doesNotMatch(text, /Labels of a full message/, `${kind}: no label list`);
   }
 });
 
-test("shapes: presented as reference to fit, last in the text, with a trivial example that stays trivial", () => {
-  assert.match(SHAPES, /reference, not a form/);
-  assert.match(SHAPES, /fit them to the work/);
-  assert.match(SHAPES, /A trivial change gets a trivial message/);
+test("shapes: the register and three examples, reference last, with a trivial example that stays trivial", () => {
+  assert.match(SHAPES, /^# Being useful in Slack \(illustration, not a form\)/);
+  assert.match(SHAPES, /here to make one decision/);
+  assert.match(SHAPES, /A good product manager/);
+  assert.match(SHAPES, /\*\*health-alias\*\* · brief · v1/);
+  assert.match(SHAPES, /\*\*csv-export-quoting\*\* · brief · v1/);
+  assert.match(SHAPES, /\*\*csv-export-quoting\*\* · design · v2/);
   const trivial = SHAPES.slice(SHAPES.indexOf("**health-alias**"));
   const lines = trivial.slice(0, trivial.indexOf("typed replies need an @mention")).split("\n").filter(Boolean);
   assert.ok(lines.length <= 4, `the two-line fix example is ${lines.length} lines`);
@@ -230,11 +256,11 @@ test("shapes: presented as reference to fit, last in the text, with a trivial ex
 
 // ---- Size ----
 
-test("size: guidance ~1 200 words per lead turn kind; with the reference shapes ≤1 700", () => {
+test("size: guidance ≤1 500 words per lead turn kind; with the reference shapes ≤1 900", () => {
   for (const [kind, input] of Object.entries(KINDS)) {
     const text = leadInstructions(input);
-    assert.ok(words(guidance(text)) <= 1_350, `${kind}: guidance ${words(guidance(text))} words`); // the ask gate mechanics cost ~50 words
-    assert.ok(words(text) <= 1_700, `${kind}: ${words(text)} words`);
+    assert.ok(words(guidance(text)) <= 1_500, `${kind}: guidance ${words(guidance(text))} words`); // the opening triage, gate answers, build-start and PR-link rules cost ~150 words
+    assert.ok(words(text) <= 1_900, `${kind}: ${words(text)} words`);
   }
 });
 

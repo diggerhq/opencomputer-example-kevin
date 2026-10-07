@@ -5,7 +5,7 @@ import type { AgentInput } from "@opencomputer/agent";
 
 import Lead, { TURN_ROUTER, turnKind } from "../opencomputer/agents/lead/agent";
 import { leadInstructions, TOOL_NAMES } from "../opencomputer/agents/lead/process/instructions";
-import { BRIEF_TURN } from "../opencomputer/agents/lead/process/lead";
+import { OPENING_TURN } from "../opencomputer/agents/lead/process/lead";
 import { render, slackMention } from "./helpers";
 
 const ALL_TOOLS = [
@@ -76,14 +76,18 @@ function dataOf(instructions: string, title: string): unknown {
   return JSON.parse(body ?? "null");
 }
 
-test("channel, first turn: the brief route is offered and needs no tool call; all tools selected", () => {
+test("channel, first turn: the opening route is offered; all tools selected", () => {
   const rendered = render(Lead, slackMention("add CSV export to the orders page"));
   assert.deepEqual(rendered.models, ["anthropic/claude-fable-5.1"]);
   assert.deepEqual(rendered.tools, ALL_TOOLS);
   assert.deepEqual(rendered.connections, BOTH_CONNECTIONS);
   assert.ok(rendered.instructions.startsWith(TURN_ROUTER), "the router comes first");
-  assert.match(rendered.instructions, /call no tool at all \(no `where_are_we`, no shell: the brief needs no computer\)/);
-  assert.ok(rendered.instructions.endsWith(BRIEF_TURN), "the brief section closes the text");
+  assert.doesNotMatch(TURN_ROUTER, /call no tool at all/, "the router no longer forbids every tool");
+  assert.match(TURN_ROUTER, /follow "This turn: the thread's opening message"/);
+  assert.ok(rendered.instructions.endsWith(OPENING_TURN), "the opening section closes the text");
+  assert.match(OPENING_TURN, /`gh api installation\/repositories`/, "the repo lookup is allowed");
+  assert.match(OPENING_TURN, /what work exists \(`where_are_we`\)/, "the work lookup is allowed");
+  assert.match(OPENING_TURN, /never clone or read code before there is work/);
   assert.ok(rendered.instructions.includes(leadInstructions({ source: "channel", firstTurn: false })));
   assert.match(rendered.instructions, /No thread id reaches you yet/);
 });
