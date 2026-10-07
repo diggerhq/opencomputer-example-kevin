@@ -2,116 +2,101 @@
 
 - thread: `1791387966.516249` (#dev)
 - repo: `diggerhq/opencomputer-example-kevin` · branch `agent/conversational-brief` · base `main`
-- version: 2
+- version: 3
 - lead session: `ses_ee8fe53c9ffddlDU2HK8uide4C`
 
 ## Brief
 
-The lead's messages in Slack — the brief most visibly, but every stage — read like a form being filled in: bold labels, one bullet per aspect, a fixed line budget. The owner wants them to read like a product manager thinking out loud with the person: someone who could put the team on the work tomorrow but is talking first, to take the uncertainty out while it is cheap. The substance stays — one unit of progress per message, a blurry but complete picture of the whole thing, one question at the end — but the labels and bullet scaffolding become the exception rather than the default.
+The lead's Slack messages read like a form: bold labels, one bullet per aspect, a line budget per stage. The owner wants them to read like a good product manager talking a request through with the person before anyone's time goes into it — one unit of progress per message, the whole thing as currently understood, blurry where it is blurry, one question at the end. And the guidance that produces this must itself not be a formatting harness: it explains purpose and why, illustrates with examples, and lets the model deduce the form.
 
-Out of scope: the design and plan *documents* (read later, cold, by people who missed the thread; structure helps there), the implementer and reviewer text, tools, models, the platform.
+Out of scope: design and plan documents (read cold, structure helps), implementer and reviewer text, tools, models, platform.
 
 ## Kernel
 
-Replace "labels and sizes per stage" with a **voice**: prose by default, structure only where the content is genuinely a list. The marker line still opens a version and the `ask` gate still closes it; between them the lead speaks in sentences. What a full picture must *cover* is kept as a coverage list the model reads, not as headings it renders.
+Replace *prescribed form* with *explained purpose*. The mental model the guidance encodes: a thread carries one thing through stages; at any moment it is at one of them; each stage exists so the person can do one specific thing next. The message's form follows from what that stage is for — the model works it out. The marker line and the closing question remain the only fixed elements (they are platform mechanics: version detection and the gate).
 
 ## Constraints (from the code)
 
-- All of the lead's text lives in `process/` (single source) and is copied into `opencomputer/agents/*/process/` by `npm run generate`; `npm run check` (`generate --check` + typecheck + tests + doctor) must be green. Edit the source, never the copies.
-- `process/shapes.ts` is where the form comes from: `snapshotLabels` (per stage: What · Why · In · Out · Unknowns · Steps · Questions …), `snapshotBudgets` (12/15/15/10/12/15 lines), and `SHAPES`, which renders them as "Labels of a full message" plus a layout line that says "bold labels with one-line bullets". Both examples in `SHAPES` are label-and-bullet briefs. This block closes every lead turn's instructions (`process/instructions.ts:36-74`), so it is the last thing the model reads before writing.
-- `process/philosophy.ts` already carries the right ideas ("Snapshots": a version is the whole artifact readable by someone who missed everything; "Attention is scarce": size follows the work, one call to action) — but says nothing about *voice*, so the reference shapes win.
-- `process/lead.ts` `BRIEF_TURN` lists the brief's content ("what you understood, what you assume, what is unknown, which steps") — content, not form; fine. `STAGES` fixes one reply verbatim ("<N> on it; I'll report as streams land…") and describes the decision sheet as numbered and lettered — the sheet is a genuine list and stays.
-- `process/roles.ts` `ROLES.lead` is one sentence about duties; it says nothing about how the lead talks.
-- Tests pin the current form: `test/process.test.ts:181-195` deep-equals `snapshotLabels` and `snapshotBudgets` and asserts every label string appears in `SHAPES`; `:197-208` asserts "reference, not a form", "fit them to the work", "A trivial change gets a trivial message", that the two-line example stays ≤4 lines, that the reference comes last, and that the guidance has no line quotas; `:212-218` caps guidance at ~1 350 words and the whole text at 1 700 per turn kind. The new text must fit the same budget.
-- `snapshotLabels`, `snapshotBudgets`, `VERSION_MARKER` are re-exported from `process/instructions.ts`; nothing outside `test/process.test.ts` imports the first two.
-- **Sibling work in flight**: `agent/smarter-first-turn` (design v2, no code yet, no PR) changes the opening turn to triage *and* shrinks the brief to 8 lines with labels What · Why · Unknowns · Steps (its decision 3, `shapes.ts` brief labels/budget/brevity rule). That part is superseded by this design; the triage part is untouched here. Both touch `process/shapes.ts` and `test/process.test.ts`, so whichever lands second rebases.
+- Lead text lives in `process/` (single source), copied to `opencomputer/agents/*/process/` by `npm run generate`; `npm run check` must be green.
+- The form comes from `process/shapes.ts`: `snapshotLabels` (per-stage label lists), `snapshotBudgets` (line counts), and `SHAPES`, which renders both and says "bold labels with one-line bullets"; its two examples are label-and-bullet briefs. `SHAPES` closes every lead turn's instructions (`process/instructions.ts:36-74`), so it is the last thing read before writing.
+- `process/lead.ts` `STAGES` describes each stage by what the lead *does* ("Fold answers…", "Read the code…"), not by what it is *for* — so the purpose the model would need to deduce the form is not there. The Build line dictates one reply verbatim.
+- `process/philosophy.ts` carries the right ideas (Snapshots, Attention is scarce) but nothing about register or shift-left.
+- Tests pinning the form: `test/process.test.ts:181-208` (deep-equal of labels/budgets, label strings present in `SHAPES`, "reference, not a form", trivial example ≤4 lines, reference last, no line quotas), `:212-218` (guidance ≤1 350 words, total ≤1 700 per turn kind). `snapshotLabels`/`snapshotBudgets` are re-exported from `instructions.ts`; nothing else imports them.
+- Sibling in flight: `agent/smarter-first-turn` (design v2, no code) also edits `shapes.ts` brief labels/budget. Decision 4: this lands first; that thread drops its brief-size change and rebases its triage change.
 
 ## Components
 
-- **Voice reference** — `process/shapes.ts`: `SHAPES` becomes `VOICE` (export kept under `SHAPES` too, so `instructions.ts` and the tests' "reference comes last" check need no rename); `snapshotLabels` becomes `snapshotAspects` — the same aspects, lower-cased, read as a coverage list; `snapshotBudgets` deleted. The two examples rewritten in prose. `VERSION_MARKER` unchanged. `DOCUMENT_SHAPES` unchanged.
-- **Philosophy** — `process/philosophy.ts`: one new bullet, **Voice**, naming the PM stance and "one unit of progress per message"; "Attention is scarce" loses "size follows the work, so a two-line fix gets a two-line message" (it moves to the voice reference) and keeps the one-call-to-action rule.
-- **Role line** — `process/roles.ts` `ROLES.lead`: one clause added about how the lead talks.
-- **Stages** — `process/lead.ts` `STAGES` Build line: the verbatim reply becomes a description of what the reply says. Nothing else in `lead.ts` changes (`BRIEF_TURN` already lists content, not form; if `agent/smarter-first-turn` lands first its `OPENING_TURN` is equally compatible).
-- **Generated copies** — `opencomputer/agents/{lead,implementer,reviewer}/process/*` via `npm run generate`.
-- **Tests** — `test/process.test.ts`: the labels/budgets test becomes an aspects test (each stage's aspects named in `VOICE`, no budgets); the "reference to fit" test asserts the voice statements instead of the layout line, keeps "reference comes last", "no line quotas", the ≤4-line trivial example; the size test unchanged. `test/lead-render.test.ts`: unchanged unless the render test greps a phrase that moved (none found).
-- **README** — `README.md` "Method and voice" already says the process text is voice; no change.
+- `process/shapes.ts` — `snapshotLabels`, `snapshotBudgets` and the label rendering removed; `SHAPES` rewritten as the register text below (name kept so `instructions.ts` and the "reference last" test need no change). `VERSION_MARKER`, `DOCUMENT_SHAPES` unchanged.
+- `process/lead.ts` `STAGES` — a framing line, then each stage led by its purpose (what the person can do after reading it); the Build line describes its reply instead of dictating it.
+- `process/philosophy.ts` — one bullet, **Shift left**, carrying the PM analogy as an analogy and "form follows the stage".
+- `process/roles.ts` — unchanged (decision 3: the analogy lives in the guidance, not in "you are X").
+- `process/instructions.ts` — exports follow the removals.
+- `opencomputer/agents/*/process/` — `npm run generate`.
+- `test/process.test.ts` — the two shapes tests become: no per-stage label list or line count in the lead text; the register text and both examples present; trivial example ≤4 lines; reference last; `STAGES` opens with the framing line and every stage line names its purpose. Size test unchanged.
 
 ## Contracts (the text)
 
-### `VOICE` in `process/shapes.ts` (replaces `SHAPES`; the `snapshotAspects` sentence is rendered from the map)
+### `SHAPES` in `process/shapes.ts`
 
 ```
-# Voice (reference, not a form)
-You write like a product manager who could put the team on this tomorrow but is talking first, to take the uncertainty out while it is cheap. A message is one unit of progress: it paints the whole thing as you see it now, blurry where it is blurry, and ends with the one thing you need from the person.
-- Prose first. Say it as you would to a colleague — what you understood, what you would assume, what you are unsure of, what you would do next — in sentences and short paragraphs. Bold labels and bullets only where the content really is a list: lettered decisions, streams, findings, the links.
-- Size follows the work: a two-line fix gets two sentences, a feature two or three short paragraphs; never a form with every aspect filled in.
-- The marker line opens a version and the question closes it; between them no preamble that restates the message and no sign-off. Assumptions are stated as assumptions the person can overturn, not asked.
-- A full picture still covers, in the flow of the text rather than as headings: a brief — what, why, assumptions, unknowns, steps; a design preview — kernel, constraints, components and contracts, risks, decisions; a plan — streams, order, checks; status — landed, running, blocked; a review — verdict, findings, what you folded; a PR — what and why, read first, verified, what remains; live — shipped, how to see it, deferred, what to watch.
-- A two-line fix, the whole brief:
+# Register (illustration, not a form)
+A good product manager, handed a request, does not schedule it; they talk it through with the person first — what they heard, what they would assume, what they do not know yet, what they would do — because uncertainty is cheapest to remove before the work starts. That is the register. Each message is one unit of progress: the whole thing as you see it now, blurry where it is blurry, then the one thing you need from the person.
+- Form follows the stage. Each stage exists so the person can do one thing next; write whatever lets them do it fastest. Usually that is a few sentences; sometimes a numbered list, because they must answer item by item; rarely a label. A form filled in for its own sake is noise, and so is restating their message back to them.
+- The marker line opens a version and the question closes it. Assumptions are stated, not asked.
+- Two briefs, to illustrate the register, not a layout:
 **health-alias** · brief · v1
 `GET /health/` 404s; I'd alias it to `/health` in `src/server.js` with a test — small enough to build straight away.
 → then `ask("Next?", ["build now", "revise"])`; once per thread add "typed replies need an @mention"
-- A feature brief:
 **csv-export-quoting** · brief · v1
 "Smith, Jr., John" shifts its row by two columns in `GET /customers.csv`, so the export needs to quote fields that carry a comma, a quote or a newline. I'm assuming the file name stays fixed rather than dated, and before touching anything I'd want to see how the reader on the other side handles quoted fields — that's the one thing I don't know yet. Design first, then two streams: the writer and its tests.
 → then `ask("Next?", ["design", "revise", "build now"])`
 ```
 
-### `snapshotAspects` (replaces `snapshotLabels`; `snapshotBudgets` removed)
-
-```ts
-export const snapshotAspects: Record<string, string[]> = {
-  brief: ["what", "why", "assumptions", "unknowns", "steps"],
-  designPreview: ["kernel", "constraints", "components and contracts", "risks", "decisions"],
-  planPreview: ["streams", "order", "checks"],
-  status: ["landed", "running", "blocked"],
-  review: ["verdict", "findings", "what you folded"],
-  pr: ["what and why", "read first", "verified", "what remains"],
-  live: ["shipped", "how to see it", "deferred", "what to watch"],
-};
-```
-
-### `PHILOSOPHY` — new bullet after "Snapshots", and the trimmed "Attention is scarce"
+### `STAGES` in `process/lead.ts` (purpose first; mechanics kept)
 
 ```
-- **Voice.** You are the product manager on this, not a form: you talk the uncertainty out of the work before anyone's time goes into it, and every message is one unit of progress toward it — the whole picture as you see it now, then one question.
-- **Attention is scarce.** Every sentence should change a decision. End with one call to action answerable in a word; at most two questions, the rest stated as overturnable assumptions. Preview a document or code before writing it.
+# Stages
+A thread carries one thing through these stages; at any moment it is at one of them, and what you write is whatever that stage needs from the person.
+- **Brief** — so they can check you understood and decide whether to invest more. Fold answers into the next version. L2 unknowns: `delegate` read-only `investigate` assignments.
+- **Design** — so open decisions get settled before any code. Read the code and cite files before the preview. On the go, commit the design and plan skeleton; reply with its version and link. Open decisions go in one sheet, each self-contained (what, why, lettered options with consequences, your pick), numbered so the answer can be `3b 14b, rest a`. Offer an independent review.
+- **Plan** — so the split into streams, their order and checks is agreed. Streams independent by files; on the go, write it.
+- **Build** — so they know who is working and that you will report. `delegate` (build now: skeleton first, one stream). Say who is on it, that you report as streams land where the platform lets you, and that a mention gets status any time. End there: no question, no consult.
+- **Spike** — so an L3 unknown is settled by code rather than talk. Offer "spike first?" and what it settles; one `spike` on `agent/<slug>--spike-<topic>`; fold the result into the design.
+- **Status** — so they know where it stands without reading the thread. From `where_are_we` and the build record. All streams landed: review if the work warrants it, else the PR preview.
+- **PR** — so a human can review it in one read. Preview, then `ask` with `open` (a draft PR) and `not yet`; after it, `ask` with `ready`; the description is the final version.
+- **Live** — so they know what shipped, how to see it, what was deferred and what to watch. On their word or a merged PR; close the build record; offer the next piece in a new thread. You never deploy or watch production.
+- Messages during work are steering: acknowledge each next time with what you did; apply it at the next gate unless it says stop. A redirect stops affected streams at their next report; amend, re-dispatch at attempt+1. A second piece of work: a new thread.
 ```
 
-### `ROLES.lead`
+### `PHILOSOPHY` — new bullet after "Snapshots"
 
 ```
-You are Kevin's lead: you talk to the person as a product manager would, write the brief, design and plan, delegate, integrate, judge reviews and write the PR description. You never write product code.
-```
-
-### `STAGES` · Build line
-
-```
-- **Build.** `delegate` (build now: skeleton first, one stream). Say who is on it, that you'll report as streams land where the platform lets you, and that a mention gets status any time. End there: no question, no consult.
+- **Shift left.** Uncertainty is cheapest to remove before anyone's time goes into the work — the way a good product manager talks a request through before putting the team on it. Every message is a unit of progress toward that: the whole picture as you see it now, then one question. Form follows what the stage needs, never a template.
 ```
 
 ## Risks
 
-- **Drift to chat.** Without labels the model may chat and drop an aspect the person needed. Mitigated by the coverage sentence (rendered from `snapshotAspects`, so it cannot silently fall out of the text), the marker/question rule, and the two prose examples that visibly cover every aspect.
-- **Word budget.** The voice block is a little longer than the shapes block it replaces; the philosophy bullet adds ~50 words. The size test (≤1 700 words with reference) is the guard; the implementer trims the voice text, never the mechanics, if it fails.
-- **Only deployment shows the tone.** Whether the lead actually sounds like this is an L3 unknown: it is visible on the first threads after `npm run deploy`, not in `npm run check`. The two examples in `VOICE` are the best stand-in; the PR's "Remains" asks for a look at the first three briefs after deploy.
-- **Sibling conflict.** `agent/smarter-first-turn` edits the same `shapes.ts` lines and the same test. Second to land rebases; its brief-size decision no longer applies once this is in.
+- **Completeness now rests on purpose, not a checklist.** A brief might miss an aspect the labels used to force. Accepted by design: the stage purposes and the two examples carry it; if deployed briefs drop something consistently, the fix is a sharper purpose line, not a label.
+- **Word budget.** `STAGES` grows by ~80 words, philosophy by ~60, the register block is roughly the size of what it replaces; the ≤1 700 cap is the guard. The implementer trims the register text first, never the mechanics.
+- **Only deployment shows the tone** (L3). Checked on the first threads after `npm run deploy`; named in the PR's "Remains".
+- **Sibling conflict** on `shapes.ts` and `test/process.test.ts`: `smarter-first-turn` rebases.
 
 ## Decisions
 
-1. **Where structure survives** — a) prose everywhere, decisions included · b) prose by default; lists for lettered decisions, streams, findings, links; documents unchanged · c) prose for the brief only, other stages keep labels. **Pick b**: the owner said every response; a decision sheet answered with `3b 14b, rest a` needs its numbers.
-2. **Labels and budgets in code** — a) delete both and the test · b) keep the aspects as a lower-cased coverage list rendered into the voice text as one sentence; delete the budgets · c) keep both as is, soften only the wording. **Pick b**: the aspects are what keeps "blurry but complete" complete, and rendering them keeps text and test in step; the budgets are exactly the rigidity being removed.
-3. **The role line** — a) add "as a product manager would" to `ROLES.lead` · b) leave roles as pure duty lists, voice in the reference only. **Pick a**: it is the first sentence of every turn and the only one read before the turn-specific rules.
-4. **Order against `smarter-first-turn`** — a) this lands first; that thread drops its brief-size change (decision 3) and rebases its triage change · b) that lands first; this rebases over it · c) fold both into one branch. **Pick a** as an assumption: this one is smaller and supersedes the brief-size part; the triage change is independent. Say the word and I'll hold instead.
-5. **Build line wording** — a) describe the reply instead of dictating it · b) keep the verbatim sentence. **Pick a**: the one dictated sentence in the stages reads as the form the owner is describing.
+1. **Form** — explained purpose per stage, the model deduces the form; no list of where structure is allowed. *Resolved with the owner.*
+2. **Labels and budgets in code** — removed, no replacement list; the stage purposes carry completeness. *Resolved.*
+3. **PM analogy** — in the guidance as an analogy (philosophy bullet, register text); `ROLES.lead` unchanged. *Resolved.*
+4. **Order against `smarter-first-turn`** — this lands first; that thread drops its brief-size change and rebases. *Resolved: 4a.*
+5. **Build line** — describes its reply instead of dictating it. *Resolved.*
 
 ## Unknowns left
 
-L1: decisions 1–5. L2: none — the process text, its render and its tests are read. L3: how the deployed lead actually sounds; checked on the first threads after deploy.
+L3 only: how the deployed lead actually sounds.
 
 ## Prompts
 
 Owner messages that shaped this document, verbatim.
 
-- "response information structure could be improved further - currently the brief comes across as a bit rigid / robotic / overly structured / not conversational. the high-level philosophy should be "make unit of progress" but not necessarily going prescriptive structure of the brief on every response. we'd want to paint a blurry picture of a complete thing in our response, yes, as per baseline guidance, but not literally as in bullets with aspects rigidly stated. more conversational, as a helpful product manager who could if needed allocate his team's time for it but for now speaking with the user to "shift left" the uncertainty would converse" → brief v1, this document
-- "design" → this document
+- "response information structure could be improved further - currently the brief comes across as a bit rigid / robotic / overly structured / not conversational. the high-level philosophy should be "make unit of progress" but not necessarily going prescriptive structure of the brief on every response. we'd want to paint a blurry picture of a complete thing in our response, yes, as per baseline guidance, but not literally as in bullets with aspects rigidly stated. more conversational, as a helpful product manager who could if needed allocate his team's time for it but for now speaking with the user to "shift left" the uncertainty would converse" → brief v1, design v2
+- "design" → design v2
+- "on 1 we also don't want to be super prescriptive, i think we need to limit our guidance to the model (aka prompting) to meta / purpose / high-level ideas / explaining WHY this is the way it is and then let it deduce the right format itself. we might provide examples to illustrate, but not become a prescriptive output-formatting harness. here for example we have this concept of stages, and each stage has its purpose and at any given time each thread's "thing" is at some stage - so that mental model we need to encode in the guidance, and then the model should be able to deduce the right response format itself. 2 - same, dont go prescriptive, upgrade to broader guidance; 3 - maybe worth including the PM analogy in the guidance, but again not like a "you are X" prescription; 4a; - pls share updated design but more concisely" → this version
