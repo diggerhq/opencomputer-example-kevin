@@ -9,7 +9,6 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import test from "node:test";
 
-import { CONVENTIONS_TEMPLATE } from "../process/conventions-template";
 import {
   implementerInstructions,
   type LeadInput,
@@ -239,10 +238,7 @@ test("size: guidance ~1 200 words per lead turn kind; with the reference shapes 
   }
 });
 
-test("conventions template: identical to templates/conventions.md, four sections", async () => {
-  assert.equal(CONVENTIONS_TEMPLATE, await readFile(resolve(ROOT, "templates", "conventions.md"), "utf8"));
-  assert.deepEqual(
-    CONVENTIONS_TEMPLATE.match(/^## .+$/gm),
-    ["## Ship directly", "## Always a plan first", "## Needs a design", "## Building"],
-  );
+test("conventions template: templates/conventions.md has its four sections (the lead reads a repo's own file, not a copy)", async () => {
+  const template = await readFile(resolve(ROOT, "templates", "conventions.md"), "utf8");
+  assert.deepEqual(template.match(/^## .+$/gm), ["## Ship directly", "## Always a plan first", "## Needs a design", "## Building"]);
 });

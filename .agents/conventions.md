@@ -7,7 +7,7 @@ Kevin reads this file (`.agents/conventions.md`) before proposing the steps for 
 Work Kevin may offer to build at once ("build now"), its design a paragraph of the PR description:
 
 - `README.md`, `DX-NOTES.md`, `docs/`: wording, diagrams, setup steps.
-- `templates/` (with its mirror `process/conventions-template.ts`, which `test/process.test.ts` keeps identical).
+- `templates/`.
 - `scripts/`: generate, secret, diagram.
 - Test-only changes that add coverage without changing behaviour.
 
