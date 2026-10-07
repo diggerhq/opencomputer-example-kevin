@@ -228,7 +228,7 @@ test("delegate: every implementer carries the lead's label and the subscription 
       assert.ok(!("labels" in (call.body as object)), "labels go on the session, not the turn");
     }
 
-    // A subscription made before sourceLabels (or answered without it) is reused as found, never duplicated.
+    // A subscription made before labels is kept while this thread has a stream running (its builder may carry no label), never duplicated.
     api.calls.length = 0;
     for (const subscription of api.subscriptions) delete subscription.sourceLabels;
     await runTool(delegate, { assignments: [assignment("api", { attempt: 2 })] });
@@ -237,6 +237,47 @@ test("delegate: every implementer carries the lead's label and the subscription 
       api.calls.find((call) => call.path === "/api/managed-agents/sessions")?.body,
       { agentId: "kevin--implementer@development", labels: { "kevin-lead": LEAD_SESSION } },
     );
+  } finally {
+    api.restore();
+    await gh.cleanup();
+  }
+});
+
+test("delegate: an unlabelled subscription is replaced by a labelled one once nothing in the thread runs (K33)", async () => {
+  const gh = await localGitHub();
+  const unlabelled = {
+    id: "sub-old",
+    agentId: "kevin--implementer",
+    events: ["turn.completed", "turn.failed", "turn.cancelled"],
+    destination: { type: "session", sessionId: LEAD_SESSION },
+    environment: "development",
+  };
+  const api = stubManagementApi({ subscriptions: [unlabelled] });
+  try {
+    await gh.repo(REPO);
+    await gh.commit(REPO, `agent/${SLUG}`, {
+      [PLAN]: plan({
+        version: 4,
+        leadSessionId: LEAD_SESSION,
+        streams: [{ stream: "api", attempt: 1, sessionId: "impl-old", branch: `agent/${SLUG}--api`, state: "landed" }],
+      }),
+    });
+    await runTool(delegate, { assignments: [assignment("web")] });
+    const created = api.calls.filter((call) => call.method === "POST" && call.path === SUBSCRIPTIONS);
+    assert.equal(created.length, 1);
+    assert.deepEqual((created[0]!.body as { sourceLabels?: unknown }).sourceLabels, { "kevin-lead": LEAD_SESSION });
+    assert.ok(api.calls.some((call) => call.method === "DELETE" && call.path === `${SUBSCRIPTIONS}/sub-old`));
+    assert.deepEqual(
+      api.subscriptions.map((subscription) => subscription.sourceLabels),
+      [{ "kevin-lead": LEAD_SESSION }],
+      "one subscription remains, and it selects this lead's implementers",
+    );
+
+    // A second delegate reuses the labelled one.
+    api.calls.length = 0;
+    await runTool(delegate, { assignments: [assignment("docs")] });
+    assert.ok(!api.calls.some((call) => call.method === "POST" && call.path === SUBSCRIPTIONS));
+    assert.ok(!api.calls.some((call) => call.method === "DELETE"));
   } finally {
     api.restore();
     await gh.cleanup();
@@ -269,6 +310,7 @@ test("delegate: an existing subscription is reused; an investigation before any 
         events: ["turn.completed", "turn.failed", "turn.cancelled"],
         destination: { type: "session", sessionId: LEAD_SESSION },
         environment: "development",
+        sourceLabels: { "kevin-lead": LEAD_SESSION },
       },
     ],
     onTurn: () => assert.ok(gh.show(REPO, `agent/${SLUG}`, PLAN)?.includes("investigate-auth")),

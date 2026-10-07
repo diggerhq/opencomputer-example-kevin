@@ -98,17 +98,39 @@ export async function leadSubscriptions(leadSessionId: string): Promise<Subscrip
   );
 }
 
+/** Whether a subscription selects exactly this lead's implementers. */
+function selectsLead(subscription: Subscription, leadSessionId: string): boolean {
+  const labels = subscription.sourceLabels ?? {};
+  const wanted = leadLabels(leadSessionId);
+  return Object.keys(labels).length === Object.keys(wanted).length && Object.entries(wanted).every(([key, value]) => labels[key] === value);
+}
+
 /**
  * The subscription that wakes this lead session on implementer outcomes,
- * created when missing, selecting the implementers this lead dispatched
- * (`sourceLabels`). Subscriptions are captured at admission, so it must
- * exist before the first implementer turn starts. An existing one is reused
- * as found: one made before `sourceLabels` stays unfiltered until it is
- * deleted (at `open_pr`, or when `where_are_we` finds nothing running).
+ * selecting the implementers this lead dispatched (`sourceLabels`; work 040
+ * K27, K33). Subscriptions are captured at admission, so it must exist
+ * before the first implementer turn starts.
+ *
+ * - One that selects this lead is reused.
+ * - One made before labels (it selects nothing, so it hears every
+ *   implementer in the environment) is reused while this thread still has a
+ *   stream running: that stream's builder may predate labels and carry
+ *   none, and keeping both subscriptions would deliver each labelled
+ *   outcome twice.
+ * - Otherwise the labelled subscription is created and the unlabelled ones
+ *   are deleted.
  */
-export async function ensureSubscription(leadSessionId: string): Promise<string> {
-  const [existing] = await leadSubscriptions(leadSessionId);
-  if (existing) return existing.id;
+export async function ensureSubscription(leadSessionId: string, options: { streamsRunning?: boolean } = {}): Promise<string> {
+  const existing = await leadSubscriptions(leadSessionId);
+  const selecting = existing.find((subscription) => selectsLead(subscription, leadSessionId));
+  const unlabelled = existing.filter((subscription) => !subscription.sourceLabels);
+  if (!selecting && unlabelled[0] && options.streamsRunning) return unlabelled[0].id;
+  const id = selecting?.id ?? (await createLeadSubscription(leadSessionId));
+  for (const old of unlabelled) await deleteSubscription(old.id);
+  return id;
+}
+
+async function createLeadSubscription(leadSessionId: string): Promise<string> {
   const { subscription } = await api<{ subscription: Subscription }>("POST", subscriptionsPath(), {
     body: {
       agentId: implementerAgent(),
@@ -121,15 +143,18 @@ export async function ensureSubscription(leadSessionId: string): Promise<string>
   return subscription.id;
 }
 
+/** Deletes one subscription; one already gone counts as deleted. */
+async function deleteSubscription(id: string): Promise<void> {
+  try {
+    await api("DELETE", `${subscriptionsPath()}/${encodeURIComponent(id)}`);
+  } catch (error) {
+    if (!(error instanceof ApiError && error.status === 404)) throw error;
+  }
+}
+
 /** Deletes every subscription of this lead session; returns how many went. */
 export async function deleteSubscriptions(leadSessionId: string): Promise<number> {
   const subscriptions = await leadSubscriptions(leadSessionId);
-  for (const subscription of subscriptions) {
-    try {
-      await api("DELETE", `${subscriptionsPath()}/${encodeURIComponent(subscription.id)}`);
-    } catch (error) {
-      if (!(error instanceof ApiError && error.status === 404)) throw error;
-    }
-  }
+  for (const subscription of subscriptions) await deleteSubscription(subscription.id);
   return subscriptions.length;
 }

@@ -54,7 +54,9 @@ export async function delegateAssignments(
   }
 
   // 1. The subscription, before any implementer turn exists.
-  const subscriptionId = await ensureSubscription(leadSessionId);
+  const subscriptionId = await ensureSubscription(leadSessionId, {
+    streamsRunning: (before?.streams ?? []).some((s) => s.state === "running"),
+  });
 
   // 2. Sessions.
   const sessions: Array<{ assignment: Assignment; sessionId: string }> = [];
