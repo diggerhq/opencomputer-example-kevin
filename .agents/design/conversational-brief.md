@@ -2,7 +2,7 @@
 
 - thread: `1791387966.516249` (#dev)
 - repo: `diggerhq/opencomputer-example-kevin` · branch `agent/conversational-brief` · base `main`
-- version: 4
+- version: 5
 - lead session: `ses_ee8fe53c9ffddlDU2HK8uide4C`
 
 ## Brief
