@@ -92,7 +92,7 @@ test("channel, later turn: same selection; the thread id is handed to where_are_
   const rendered = render(Lead, threadReply("design"));
   assert.deepEqual(rendered.tools, ALL_TOOLS);
   assert.deepEqual(rendered.connections, BOTH_CONNECTIONS);
-  assert.match(rendered.instructions, /Call `where_are_we` before anything else/);
+  assert.match(rendered.instructions, /call `where_are_we` before anything else/);
   assert.match(rendered.instructions, /Thread id: `1759750000\.000100`\. Pass it to `where_are_we` as `threadId`/);
 });
 

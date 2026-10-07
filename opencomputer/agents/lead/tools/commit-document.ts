@@ -1,6 +1,7 @@
 import { defineTool } from "@opencomputer/agent";
 
 import { commitDocument as commit } from "./lib/documents";
+import { traced } from "./lib/telemetry";
 
 /**
  * Writes, commits and pushes one document: same-repo → the code repo's `agent/<slug>`, created from the
@@ -31,18 +32,21 @@ export const commitDocument = defineTool({
     required: ["repo", "branch", "path", "message"],
     additionalProperties: false,
   },
-  async run({ input, sessionId }) {
-    return commit(
-      {
-        repo: input.repo as string,
-        branch: String(input.branch ?? ""),
-        path: String(input.path ?? ""),
-        ...(typeof input.content === "string" ? { content: input.content } : {}),
-        message: String(input.message ?? ""),
-        ...(input.state === undefined ? {} : { state: input.state }),
-        ...(input.version === undefined ? {} : { version: input.version as number }),
-      },
-      sessionId,
-    );
+  async run(context) {
+    const { input, sessionId } = context;
+    return traced("commit_document", context, input, async () => {
+      return commit(
+        {
+          repo: input.repo as string,
+          branch: String(input.branch ?? ""),
+          path: String(input.path ?? ""),
+          ...(typeof input.content === "string" ? { content: input.content } : {}),
+          message: String(input.message ?? ""),
+          ...(input.state === undefined ? {} : { state: input.state }),
+          ...(input.version === undefined ? {} : { version: input.version as number }),
+        },
+        sessionId,
+      );
+    });
   },
 });

@@ -112,12 +112,30 @@ test("boundaries: each role has its never-list", () => {
 test("turn order: the channel turn starts from where_are_we; the brief turn calls nothing", () => {
   const channel = leadInstructions(CHANNEL);
   assert.ok(channel.startsWith("You are Kevin's lead"));
-  assert.match(channel, /Call `where_are_we` before anything else/);
+  assert.match(channel, /call `where_are_we` before anything else/);
   assert.ok(channel.indexOf("# This turn") < channel.indexOf("# Stages"));
   const brief = leadInstructions(BRIEF);
   assert.match(brief, /# This turn: a new thread\. Write the brief\./);
   assert.match(brief, /No lookups this turn/);
   assert.doesNotMatch(guidance(brief), /Call `where_are_we`/);
+});
+
+test("ask: the reply is written before the question; non-work messages get a plain answer", () => {
+  const channel = leadInstructions(CHANNEL);
+  assert.match(channel, /`ask` ends the turn and posts only the text written before it/);
+  assert.match(channel, /write the whole reply first/);
+  assert.match(channel, /a plain answer without tools/);
+  assert.match(leadInstructions(ANSWER), /write the whole reply first/);
+});
+
+test("failures: every lead turn with tools tells the person plainly and keeps raw errors out of the thread", () => {
+  for (const input of [CHANNEL, EVENT, ANSWER]) {
+    const text = leadInstructions(input);
+    assert.match(text, /# When something fails/);
+    assert.match(text, /never raw errors or command output/);
+    assert.match(text, /Retry once at most/);
+  }
+  assert.match(leadInstructions(EVENT), /always one line, with the next step, for a stream that failed or blocked/);
 });
 
 test("the build reply is the same with or without outcomes posting; the turn ends there", () => {

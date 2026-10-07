@@ -4,6 +4,7 @@ import { config } from "../config";
 import { deleteSubscriptions } from "./lib/api";
 import { agentRefs, blobUrl, checkRepo, defaultBranch, ghFile, ghJson, installationRepos } from "./lib/github";
 import { designPath, type KevinState, planPath, readHeaderVersion, readState } from "./lib/state";
+import { traced } from "./lib/telemetry";
 
 /** At most this many granted repos are searched when no repo is named. */
 const MAX_REPOS = 30;
@@ -152,20 +153,23 @@ export const whereAreWe = defineTool({
     },
     additionalProperties: false,
   },
-  async run({ input, sessionId: own }) {
-    const sessionId = typeof input.sessionId === "string" && input.sessionId ? input.sessionId : own;
-    const threadId = typeof input.threadId === "string" && input.threadId ? input.threadId : undefined;
-    const repos = input.repo === undefined ? (await installationRepos()).slice(0, MAX_REPOS) : [checkRepo(input.repo)];
-    const { found, slugsInUse } = await find(sessionId, threadId, repos);
-    if (found) return describe(found, sessionId);
-    return {
-      ...(input.repo === undefined ? {} : { repo: repos[0] as string }),
-      base: input.repo === undefined ? "" : await defaultBranch(repos[0] as string),
-      version: 0,
-      docs: {},
-      streams: [],
-      lastCommits: [],
-      slugsInUse,
-    };
+  async run(context) {
+    const { input, sessionId: own } = context;
+    return traced("where_are_we", context, input, async () => {
+      const sessionId = typeof input.sessionId === "string" && input.sessionId ? input.sessionId : own;
+      const threadId = typeof input.threadId === "string" && input.threadId ? input.threadId : undefined;
+      const repos = input.repo === undefined ? (await installationRepos()).slice(0, MAX_REPOS) : [checkRepo(input.repo)];
+      const { found, slugsInUse } = await find(sessionId, threadId, repos);
+      if (found) return describe(found, sessionId);
+      return {
+        ...(input.repo === undefined ? {} : { repo: repos[0] as string }),
+        base: input.repo === undefined ? "" : await defaultBranch(repos[0] as string),
+        version: 0,
+        docs: {},
+        streams: [],
+        lastCommits: [],
+        slugsInUse,
+      };
+    });
   },
 });

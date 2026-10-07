@@ -3,6 +3,7 @@ import { defineTool } from "@opencomputer/agent";
 import { checkRepo } from "./lib/github";
 import { mergeStream } from "./lib/git";
 import { SLUG } from "./lib/assignment";
+import { traced } from "./lib/telemetry";
 
 /**
  * Merges one stream into the work branch: fetch, refuse a clone whose `git status --porcelain` is not empty,
@@ -25,11 +26,14 @@ export const integrate = defineTool({
     required: ["repo", "slug", "stream"],
     additionalProperties: false,
   },
-  async run({ input }) {
-    const slug = String(input.slug ?? "");
-    const stream = String(input.stream ?? "");
-    if (!SLUG.test(slug)) throw new Error(`slug must be kebab-case, got ${JSON.stringify(slug)}`);
-    if (!SLUG.test(stream)) throw new Error(`stream must be kebab-case, got ${JSON.stringify(stream)}`);
-    return mergeStream(checkRepo(input.repo), slug, stream);
+  async run(context) {
+    const { input } = context;
+    return traced("integrate", context, input, async () => {
+      const slug = String(input.slug ?? "");
+      const stream = String(input.stream ?? "");
+      if (!SLUG.test(slug)) throw new Error(`slug must be kebab-case, got ${JSON.stringify(slug)}`);
+      if (!SLUG.test(stream)) throw new Error(`stream must be kebab-case, got ${JSON.stringify(stream)}`);
+      return mergeStream(checkRepo(input.repo), slug, stream);
+    });
   },
 });

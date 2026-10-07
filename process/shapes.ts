@@ -54,7 +54,7 @@ function labelLines(): string {
 // 019 §4 "Snapshot format in Slack", "Nesting"
 export const SHAPES = `# Shapes that work (reference, not a form)
 These have read well in Slack; fit them to the work and drop what carries nothing. A trivial change gets a trivial message.
-- Layout: the marker; bold labels with one-line bullets (a one-phrase section on one line); the links that exist (branch · design · plan · PR); \`---\`; reply words as code spans on the last line.
+- Layout: the marker; bold labels with one-line bullets (a one-phrase section on one line); the links that exist (branch · design · plan · PR); then \`ask\` with the options.
 - Labels of a full message (a preview uses its document's labels; the PR description is the plan grown up):
 ${labelLines()}
 - A two-line fix, the whole brief:
@@ -71,7 +71,7 @@ ${labelLines()}
 **Steps** design → plan → build → review → PR; two streams
 
 ---
-→ then \`ask("Next?", ["design", "revise", "build now"])\`; once per thread add "typed replies need an @mention"`;
+→ then \`ask("Next?", ["design", "revise", "build now"])\``;
 
 // 019 §6 design, plan and PR shapes; §10 Prompts; work 040 "Plan state"
 export const DOCUMENT_SHAPES = `# Documents (reference)

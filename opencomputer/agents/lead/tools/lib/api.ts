@@ -5,6 +5,7 @@
  */
 import { config } from "../../config";
 import { opencomputer } from "../../connections/opencomputer";
+import { emit } from "./telemetry";
 
 const BASE = "/api/managed-agents";
 
@@ -27,12 +28,14 @@ export async function api<T>(
   const headers: Record<string, string> = { accept: "application/json" };
   if (options.body !== undefined) headers["content-type"] = "application/json";
   if (options.idempotencyKey) headers["idempotency-key"] = options.idempotencyKey;
+  const started = Date.now();
   const response = await opencomputer.fetch(`${BASE}${path}`, {
     method,
     headers,
     ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
   });
   const text = await response.text();
+  await emit({ event: "api", method, path, status: response.status, ms: Date.now() - started });
   if (!response.ok) {
     let code: string | undefined;
     let message = text.slice(0, 300);

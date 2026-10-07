@@ -189,7 +189,15 @@ Inspect sessions in the dashboard or CLI:
 npx opencomputer session list
 npx opencomputer session inspect <session-id>
 npx opencomputer logs --session <session-id>
+npx opencomputer sessions tail <session-id> --no-follow
 ```
+
+`sessions tail` prints a session's full event log: the instructions each
+turn was given, the model's reasoning, every tool call and its result. The
+lead's tools add a `tool.progress` record for each command and API call
+(exit code, duration, the end of any error output, credentials removed), so
+a failure the lead reported in one sentence can be traced to the command
+that caused it.
 
 See [setup and authoring gotchas](DX-NOTES.md) for troubleshooting.
 `npm run check` checks generated files, types, tests and project configuration

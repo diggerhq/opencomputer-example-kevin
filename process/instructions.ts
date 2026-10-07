@@ -16,6 +16,7 @@ import {
   CONSULTING,
   DELEGATION,
   EVENT_TURN,
+  FAILURES,
   MECHANICS,
   
   REPOS_AND_DOCUMENTS,
@@ -39,7 +40,7 @@ export function leadInstructions(input: LeadInput): string {
   }
   // 019 §11 sequence step 6: event turns record and merge only
   if (input.source === "event") {
-    return [ROLES.lead, EVENT_TURN, MECHANICS, DELEGATION, REPOS_AND_DOCUMENTS].join("\n\n");
+    return [ROLES.lead, EVENT_TURN, MECHANICS, FAILURES, DELEGATION, REPOS_AND_DOCUMENTS].join("\n\n");
   }
   // 019 §11 review loop: the consult answer arrives as a subagent input
   if (input.source === "subagent") {
@@ -47,6 +48,7 @@ export function leadInstructions(input: LeadInput): string {
       ROLES.lead,
       CONSULT_ANSWER_TURN,
       MECHANICS,
+      FAILURES,
       CONSULTING,
       DELEGATION,
       REPOS_AND_DOCUMENTS,
@@ -59,8 +61,8 @@ export function leadInstructions(input: LeadInput): string {
     ROLES.lead,
     CHANNEL_TURN_START,
     STAGES,
-    
     MECHANICS,
+    FAILURES,
     DELEGATION,
     CONSULTING,
     REPOS_AND_DOCUMENTS,

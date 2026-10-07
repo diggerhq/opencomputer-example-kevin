@@ -1,5 +1,7 @@
 import { execFile } from "node:child_process";
 
+import { emit, scrub } from "./telemetry";
+
 /** What a finished command left behind. */
 export interface ExecResult {
   code: number;
@@ -23,7 +25,24 @@ export type Exec = (command: string, args: readonly string[], options?: ExecOpti
  * before `integrate` or `open_pr`, or a long-idle computer may hold an
  * expired token.
  */
-export const realExec: Exec = (command, args, options = {}) =>
+export const realExec: Exec = async (command, args, options = {}) => {
+  const started = Date.now();
+  const result = await spawn(command, args, options).catch(async (error: Error) => {
+    await emit({ event: "exec", command: scrub(`${command} ${args.slice(0, 3).join(" ")}`, 160), ms: Date.now() - started, error: scrub(error.message, 300) });
+    throw error;
+  });
+  await emit({
+    event: "exec",
+    command: scrub(`${command} ${args.slice(0, 3).join(" ")}`, 160),
+    code: result.code,
+    ms: Date.now() - started,
+    ...(result.code === 0 ? {} : { stderr: scrub(result.stderr || result.stdout, 400) }),
+  });
+  return result;
+};
+
+/** One child process; resolves with its exit code and output. */
+const spawn: Exec = (command, args, options = {}) =>
   new Promise((resolve, reject) => {
     const child = execFile(
       command,

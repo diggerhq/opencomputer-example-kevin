@@ -8,6 +8,7 @@ import { SLUG } from "./lib/assignment";
 import { deleteSubscriptions } from "./lib/api";
 import { must, runtime } from "./lib/exec";
 import { checkRepo } from "./lib/github";
+import { traced } from "./lib/telemetry";
 
 interface PullRequest {
   number: number;
@@ -76,7 +77,10 @@ export const openPr = defineTool({
     required: ["repo", "slug"],
     additionalProperties: false,
   },
-  async run({ input, sessionId }) {
-    return openPullRequest(input, sessionId);
+  async run(context) {
+    const { input, sessionId } = context;
+    return traced("open_pr", context, input, async () => {
+      return openPullRequest(input, sessionId);
+    });
   },
 });

@@ -207,7 +207,7 @@ test("delegate: no session and no turn when the subscription cannot be made", as
   try {
     await gh.repo(REPO);
     await gh.commit(REPO, `agent/${SLUG}`, { [PLAN]: plan({ version: 4, leadSessionId: LEAD_SESSION, streams: [] }) });
-    await assert.rejects(runTool(delegate, { assignments: [assignment("api")] }), /answered 503 unavailable.*retrying the same call is safe/);
+    await assert.rejects(runTool(delegate, { assignments: [assignment("api")] }), /delegate failed: the OpenComputer API is unavailable \(503\); retrying the same call once is safe/);
     assert.ok(!api.calls.some((call) => call.path.endsWith("/sessions") || call.path.endsWith("/turns")));
   } finally {
     api.restore();

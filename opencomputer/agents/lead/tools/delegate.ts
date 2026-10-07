@@ -6,6 +6,7 @@ import { type Assignment, ASSIGNMENT_SCHEMA, assignmentText, checkAssignment } f
 import { commitDocument, planLocation, readPlan } from "./lib/documents";
 import { ensureRemoteBranch } from "./lib/git";
 import { type KevinState, readHeaderVersion, type StreamState } from "./lib/state";
+import { traced } from "./lib/telemetry";
 
 /** `kevin:<leadSessionId>:<stream>:<attempt>`: idempotency keys are organisation-wide, so never slug-based. */
 export function idempotencyKey(leadSessionId: string, stream: string, attempt: number): string {
@@ -152,7 +153,10 @@ export const delegate = defineTool({
     required: ["assignments"],
     additionalProperties: false,
   },
-  async run({ input, sessionId }) {
-    return delegateAssignments(input.assignments, sessionId);
+  async run(context) {
+    const { input, sessionId } = context;
+    return traced("delegate", context, input, async () => {
+      return delegateAssignments(input.assignments, sessionId);
+    });
   },
 });
