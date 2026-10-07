@@ -11,7 +11,16 @@
   "version": 5,
   "leadSessionId": "ses_ee8fe53c9ffddlDU2HK8uide4C",
   "threadId": "1791387966.516249",
-  "streams": []
+  "subscriptionId": "evs_4ea928b7e67d4e1caad519b874e80985",
+  "streams": [
+    {
+      "stream": "lead-text",
+      "attempt": 1,
+      "sessionId": "d87ebddd-b0cf-9733-8b7b-fe03a277513e",
+      "branch": "agent/conversational-brief--lead-text",
+      "state": "running"
+    }
+  ]
 }
 ```
 
