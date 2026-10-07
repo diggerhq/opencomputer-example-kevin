@@ -160,8 +160,9 @@ test("delegate: subscription first, then sessions, then the state block, then tu
       events: ["turn.completed", "turn.failed", "turn.cancelled"],
       destination: { type: "session", sessionId: LEAD_SESSION },
       environment: "development",
+      sourceLabels: { "kevin-lead": LEAD_SESSION },
     });
-    assert.deepEqual(api.calls[2]?.body, { agentId: "kevin--implementer@development" });
+    assert.deepEqual(api.calls[2]?.body, { agentId: "kevin--implementer@development", labels: { "kevin-lead": LEAD_SESSION } });
     const turn = api.calls[4]?.body as { input: string; payload: Record<string, unknown>; mode: string };
     assert.equal(turn.mode, "queue");
     assert.deepEqual(turn.payload, { ...assignment("api"), branch: `agent/${SLUG}--api` });
@@ -199,6 +200,90 @@ test("delegate: subscription first, then sessions, then the state block, then tu
   }
 });
 
+test("delegate: every implementer carries the lead's label and the subscription selects on it (inert until the platform reads sourceLabels)", async () => {
+  const gh = await localGitHub();
+  const api = stubManagementApi();
+  const otherLead = "lead-session-2";
+  try {
+    await gh.repo(REPO);
+    await gh.commit(REPO, `agent/${SLUG}`, { [PLAN]: plan({ version: 4, leadSessionId: LEAD_SESSION, streams: [] }) });
+    await runTool(delegate, { assignments: [assignment("api"), assignment("web")] });
+    await runTool(delegate, { assignments: [assignment("docs", { attempt: 1 })] }, otherLead);
+
+    const subscriptionBodies = api.calls.filter((call) => call.method === "POST" && call.path === SUBSCRIPTIONS).map((call) => call.body);
+    assert.deepEqual(
+      subscriptionBodies.map((body) => (body as { sourceLabels?: unknown }).sourceLabels),
+      [{ "kevin-lead": LEAD_SESSION }, { "kevin-lead": otherLead }],
+      "one subscription per lead session, each selecting its own implementers",
+    );
+    const sessionBodies = api.calls
+      .filter((call) => call.method === "POST" && call.path === "/api/managed-agents/sessions")
+      .map((call) => call.body as { agentId: string; labels: Record<string, string> });
+    assert.deepEqual(sessionBodies, [
+      { agentId: "kevin--implementer@development", labels: { "kevin-lead": LEAD_SESSION } },
+      { agentId: "kevin--implementer@development", labels: { "kevin-lead": LEAD_SESSION } },
+      { agentId: "kevin--implementer@development", labels: { "kevin-lead": otherLead } },
+    ]);
+    for (const call of api.calls.filter((c) => c.path.endsWith("/turns"))) {
+      assert.ok(!("labels" in (call.body as object)), "labels go on the session, not the turn");
+    }
+
+    // A subscription made before labels is kept while this thread has a stream running (its builder may carry no label), never duplicated.
+    api.calls.length = 0;
+    for (const subscription of api.subscriptions) delete subscription.sourceLabels;
+    await runTool(delegate, { assignments: [assignment("api", { attempt: 2 })] });
+    assert.ok(!api.calls.some((call) => call.method === "POST" && call.path === SUBSCRIPTIONS));
+    assert.deepEqual(
+      api.calls.find((call) => call.path === "/api/managed-agents/sessions")?.body,
+      { agentId: "kevin--implementer@development", labels: { "kevin-lead": LEAD_SESSION } },
+    );
+  } finally {
+    api.restore();
+    await gh.cleanup();
+  }
+});
+
+test("delegate: an unlabelled subscription is replaced by a labelled one once nothing in the thread runs (K33)", async () => {
+  const gh = await localGitHub();
+  const unlabelled = {
+    id: "sub-old",
+    agentId: "kevin--implementer",
+    events: ["turn.completed", "turn.failed", "turn.cancelled"],
+    destination: { type: "session", sessionId: LEAD_SESSION },
+    environment: "development",
+  };
+  const api = stubManagementApi({ subscriptions: [unlabelled] });
+  try {
+    await gh.repo(REPO);
+    await gh.commit(REPO, `agent/${SLUG}`, {
+      [PLAN]: plan({
+        version: 4,
+        leadSessionId: LEAD_SESSION,
+        streams: [{ stream: "api", attempt: 1, sessionId: "impl-old", branch: `agent/${SLUG}--api`, state: "landed" }],
+      }),
+    });
+    await runTool(delegate, { assignments: [assignment("web")] });
+    const created = api.calls.filter((call) => call.method === "POST" && call.path === SUBSCRIPTIONS);
+    assert.equal(created.length, 1);
+    assert.deepEqual((created[0]!.body as { sourceLabels?: unknown }).sourceLabels, { "kevin-lead": LEAD_SESSION });
+    assert.ok(api.calls.some((call) => call.method === "DELETE" && call.path === `${SUBSCRIPTIONS}/sub-old`));
+    assert.deepEqual(
+      api.subscriptions.map((subscription) => subscription.sourceLabels),
+      [{ "kevin-lead": LEAD_SESSION }],
+      "one subscription remains, and it selects this lead's implementers",
+    );
+
+    // A second delegate reuses the labelled one.
+    api.calls.length = 0;
+    await runTool(delegate, { assignments: [assignment("docs")] });
+    assert.ok(!api.calls.some((call) => call.method === "POST" && call.path === SUBSCRIPTIONS));
+    assert.ok(!api.calls.some((call) => call.method === "DELETE"));
+  } finally {
+    api.restore();
+    await gh.cleanup();
+  }
+});
+
 test("delegate: no session and no turn when the subscription cannot be made", async () => {
   const gh = await localGitHub();
   const api = stubManagementApi({
@@ -225,6 +310,7 @@ test("delegate: an existing subscription is reused; an investigation before any 
         events: ["turn.completed", "turn.failed", "turn.cancelled"],
         destination: { type: "session", sessionId: LEAD_SESSION },
         environment: "development",
+        sourceLabels: { "kevin-lead": LEAD_SESSION },
       },
     ],
     onTurn: () => assert.ok(gh.show(REPO, `agent/${SLUG}`, PLAN)?.includes("investigate-auth")),

@@ -130,6 +130,7 @@ interface Subscription {
   events: string[];
   destination: { type: string; sessionId: string };
   environment: string;
+  sourceLabels?: Record<string, string>;
 }
 
 /**
