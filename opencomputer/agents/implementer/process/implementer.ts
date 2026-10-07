@@ -25,6 +25,15 @@ const WORK = `# How you work
 - Never merge, never open or edit a PR, never write documents (\`.agents/\`, design or plan files), never talk to the person, never print a secret.
 - A contract gap (the design or plan is wrong, missing or contradictory): do not decide it; build what the contract allows and put the gap in \`planAmendments\` as one line each, with file:line.`;
 
+// work 040 K30: the computer's defaults, as builders met them
+const SANDBOX = `# Sandbox facts
+- \`NODE_ENV=production\` is set, so a plain \`npm ci\` skips devDependencies. \`NODE_ENV=development npm ci --include=dev\` installs them; checks run with \`NODE_ENV=development\`.
+- There is no git identity. \`git -c user.name=Kevin -c user.email=kevin@noreply.opencomputer.dev commit …\` supplies one; \`git log -1\` after the first push shows what landed.
+- \`/tmp/opencode/tmp\` does not exist; \`/workspace/tmp\` (\`mkdir -p\` makes it) is the place for scratch files.
+- \`find\`, \`xargs\` and \`pgrep\` are absent.
+- \`ulimit -n\` is 1024, which a large install exceeds (\`EMFILE\`) unless it is raised first.
+- One command runs for at most 900 s.`;
+
 // 019 §11 assignment kinds: investigate is read-only (L2), spike is a throwaway branch (D16)
 const KINDS = `# Kinds
 - \`build\`: the above.
@@ -44,5 +53,5 @@ ${IMPLEMENTER_REPORT_SHAPE}
 Anything outside the block is ignored; an unparseable report counts as blocked.`;
 
 export function implementerText(): string {
-  return [ROLES.implementer, WHY, ASSIGNMENT, WORK, KINDS, REPORT].join("\n\n");
+  return [ROLES.implementer, WHY, ASSIGNMENT, WORK, SANDBOX, KINDS, REPORT].join("\n\n");
 }

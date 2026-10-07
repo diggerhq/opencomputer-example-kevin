@@ -160,8 +160,9 @@ test("delegate: subscription first, then sessions, then the state block, then tu
       events: ["turn.completed", "turn.failed", "turn.cancelled"],
       destination: { type: "session", sessionId: LEAD_SESSION },
       environment: "development",
+      sourceLabels: { "kevin-lead": LEAD_SESSION },
     });
-    assert.deepEqual(api.calls[2]?.body, { agentId: "kevin--implementer@development" });
+    assert.deepEqual(api.calls[2]?.body, { agentId: "kevin--implementer@development", labels: { "kevin-lead": LEAD_SESSION } });
     const turn = api.calls[4]?.body as { input: string; payload: Record<string, unknown>; mode: string };
     assert.equal(turn.mode, "queue");
     assert.deepEqual(turn.payload, { ...assignment("api"), branch: `agent/${SLUG}--api` });
@@ -193,6 +194,49 @@ test("delegate: subscription first, then sessions, then the state block, then tu
     assert.ok(api.calls.some((call) => call.idempotencyKey === `kevin:${LEAD_SESSION}:api:2`));
     const after = readState(gh.show(REPO, `agent/${SLUG}`, PLAN) ?? "");
     assert.deepEqual(after?.streams.map((s) => `${s.stream}@${s.attempt}`), ["api@2", "web@1"]);
+  } finally {
+    api.restore();
+    await gh.cleanup();
+  }
+});
+
+test("delegate: every implementer carries the lead's label and the subscription selects on it (inert until the platform reads sourceLabels)", async () => {
+  const gh = await localGitHub();
+  const api = stubManagementApi();
+  const otherLead = "lead-session-2";
+  try {
+    await gh.repo(REPO);
+    await gh.commit(REPO, `agent/${SLUG}`, { [PLAN]: plan({ version: 4, leadSessionId: LEAD_SESSION, streams: [] }) });
+    await runTool(delegate, { assignments: [assignment("api"), assignment("web")] });
+    await runTool(delegate, { assignments: [assignment("docs", { attempt: 1 })] }, otherLead);
+
+    const subscriptionBodies = api.calls.filter((call) => call.method === "POST" && call.path === SUBSCRIPTIONS).map((call) => call.body);
+    assert.deepEqual(
+      subscriptionBodies.map((body) => (body as { sourceLabels?: unknown }).sourceLabels),
+      [{ "kevin-lead": LEAD_SESSION }, { "kevin-lead": otherLead }],
+      "one subscription per lead session, each selecting its own implementers",
+    );
+    const sessionBodies = api.calls
+      .filter((call) => call.method === "POST" && call.path === "/api/managed-agents/sessions")
+      .map((call) => call.body as { agentId: string; labels: Record<string, string> });
+    assert.deepEqual(sessionBodies, [
+      { agentId: "kevin--implementer@development", labels: { "kevin-lead": LEAD_SESSION } },
+      { agentId: "kevin--implementer@development", labels: { "kevin-lead": LEAD_SESSION } },
+      { agentId: "kevin--implementer@development", labels: { "kevin-lead": otherLead } },
+    ]);
+    for (const call of api.calls.filter((c) => c.path.endsWith("/turns"))) {
+      assert.ok(!("labels" in (call.body as object)), "labels go on the session, not the turn");
+    }
+
+    // A subscription made before sourceLabels (or answered without it) is reused as found, never duplicated.
+    api.calls.length = 0;
+    for (const subscription of api.subscriptions) delete subscription.sourceLabels;
+    await runTool(delegate, { assignments: [assignment("api", { attempt: 2 })] });
+    assert.ok(!api.calls.some((call) => call.method === "POST" && call.path === SUBSCRIPTIONS));
+    assert.deepEqual(
+      api.calls.find((call) => call.path === "/api/managed-agents/sessions")?.body,
+      { agentId: "kevin--implementer@development", labels: { "kevin-lead": LEAD_SESSION } },
+    );
   } finally {
     api.restore();
     await gh.cleanup();

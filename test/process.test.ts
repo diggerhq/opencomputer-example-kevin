@@ -176,6 +176,27 @@ test("concepts: the implementer and the reviewer are told why their context is n
   assert.match(reviewerInstructions(), /judge what was built/);
 });
 
+test("sandbox facts: the implementer is told the computer's defaults, as facts, and the lead's text is unchanged by them", () => {
+  const implementer = implementerInstructions();
+  const block = implementer.slice(implementer.indexOf("# Sandbox facts"), implementer.indexOf("# Kinds"));
+  assert.ok(block.startsWith("# Sandbox facts\n"), "one Sandbox facts block, before Kinds");
+  assert.equal(implementer.split("# Sandbox facts").length, 2, "exactly one block");
+  assert.match(block, /`NODE_ENV=production` is set/);
+  assert.match(block, /`NODE_ENV=development npm ci --include=dev`/);
+  assert.match(block, /no git identity/);
+  assert.match(block, /`git -c user\.name=Kevin -c user\.email=kevin@noreply\.opencomputer\.dev commit/);
+  assert.match(block, /`git log -1` after the first push/);
+  assert.match(block, /`\/tmp\/opencode\/tmp` does not exist; `\/workspace\/tmp`/);
+  assert.match(block, /`find`, `xargs` and `pgrep` are absent/);
+  assert.match(block, /`ulimit -n` is 1024/);
+  assert.match(block, /900 s/);
+  assert.doesNotMatch(block, /\b(must|always|never)\b/i, "facts, not rules");
+  for (const [kind, input] of Object.entries(KINDS)) {
+    assert.ok(!leadInstructions(input).includes("# Sandbox facts"), `${kind}: the lead's size budget is untouched`);
+  }
+  assert.ok(words(block) <= 120, `the block is ${words(block)} words`);
+});
+
 // ---- Shapes: reference material, fitted to the work ----
 
 test("shapes: the reference module carries the snapshot labels and sizes", () => {

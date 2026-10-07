@@ -1,7 +1,7 @@
 import { defineTool } from "@opencomputer/agent";
 
 import { config } from "../config";
-import { api, ensureSubscription } from "./lib/api";
+import { api, ensureSubscription, leadLabels } from "./lib/api";
 import { type Assignment, ASSIGNMENT_SCHEMA, assignmentText, checkAssignment } from "./lib/assignment";
 import { commitDocument, planLocation, readPlan } from "./lib/documents";
 import { ensureRemoteBranch } from "./lib/git";
@@ -18,7 +18,8 @@ export function idempotencyKey(leadSessionId: string, stream: string, attempt: n
  *   1. ensure this lead session's subscription to implementer outcomes —
  *      before the first delegate of any kind, since subscriptions are
  *      captured when a turn is admitted;
- *   2. `POST /sessions` per assignment, keyed `kevin:<lead>:<stream>:<attempt>`;
+ *   2. `POST /sessions` per assignment, keyed `kevin:<lead>:<stream>:<attempt>`,
+ *      labelled `kevin-lead: <lead>` so the subscription selects it;
  *   3. commit the plan's `kevin-state` block with every session, running;
  *   4. `POST /sessions/<id>/turns` per assignment, key + `:turn`.
  * A retry reads the state first and reuses the session it recorded; the keys
@@ -65,7 +66,10 @@ export async function delegateAssignments(
       recorded?.sessionId ??
       (
         await api<{ session: { id: string } }>("POST", "/sessions", {
-          body: { agentId: `${config.agentPrefix}--implementer@${config.environment}` },
+          body: {
+            agentId: `${config.agentPrefix}--implementer@${config.environment}`,
+            labels: leadLabels(leadSessionId),
+          },
           idempotencyKey: idempotencyKey(leadSessionId, assignment.stream, assignment.attempt),
         })
       ).session.id;

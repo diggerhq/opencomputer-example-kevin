@@ -65,6 +65,22 @@ export interface Subscription {
   events: string[];
   destination: { type: string; sessionId: string };
   environment: string;
+  sourceLabels?: Record<string, string>;
+}
+
+/**
+ * The label that ties an implementer session to the lead session that
+ * dispatched it: every implementer is created with it, and the lead's
+ * subscription selects on it (`sourceLabels`), so a lead wakes only on its
+ * own thread's outcomes (work 040 K27). A platform that does not know
+ * `sourceLabels` ignores the field and delivers every implementer outcome
+ * in the environment, as before.
+ */
+export const LEAD_LABEL = "kevin-lead";
+
+/** `{ "kevin-lead": <leadSessionId> }`: an implementer session's labels and the subscription's `sourceLabels`. */
+export function leadLabels(leadSessionId: string): Record<string, string> {
+  return { [LEAD_LABEL]: leadSessionId };
 }
 
 const implementerAgent = () => `${config.agentPrefix}--implementer`;
@@ -84,8 +100,11 @@ export async function leadSubscriptions(leadSessionId: string): Promise<Subscrip
 
 /**
  * The subscription that wakes this lead session on implementer outcomes,
- * created when missing. Subscriptions are captured at
- * admission, so it must exist before the first implementer turn starts.
+ * created when missing, selecting the implementers this lead dispatched
+ * (`sourceLabels`). Subscriptions are captured at admission, so it must
+ * exist before the first implementer turn starts. An existing one is reused
+ * as found: one made before `sourceLabels` stays unfiltered until it is
+ * deleted (at `open_pr`, or when `where_are_we` finds nothing running).
  */
 export async function ensureSubscription(leadSessionId: string): Promise<string> {
   const [existing] = await leadSubscriptions(leadSessionId);
@@ -96,6 +115,7 @@ export async function ensureSubscription(leadSessionId: string): Promise<string>
       events: ["turn.completed", "turn.failed", "turn.cancelled"],
       destination: { type: "session", sessionId: leadSessionId },
       environment: config.environment,
+      sourceLabels: leadLabels(leadSessionId),
     },
   });
   return subscription.id;
