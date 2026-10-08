@@ -62,17 +62,19 @@ export async function openPullRequest(input: Record<string, unknown>, leadSessio
 export const openPr = defineTool({
   name: "open_pr",
   description:
-    "Open the draft PR for agent/<slug> (title, body = the PR description, base), or with ready: true mark it ready for review. " +
-    "Deletes this session's outcome subscription. Returns { number, url, draft, subscriptionsDeleted }.",
+    "Opens a draft pull request from agent/<slug> into base with your title and body, or with ready: true marks that draft " +
+    "ready for review; useful when the work on agent/<slug> is ready for people to read on GitHub. A branch that already has " +
+    "a PR gets that PR back unchanged. Either way it deletes your outcome subscriptions, since nothing should wake the thread " +
+    "after the PR. Returns { number, url, draft, subscriptionsDeleted }.",
   input: {
     type: "object",
     properties: {
       repo: { type: "string", description: "The code repo, owner/name" },
-      slug: { type: "string" },
-      base: { type: "string", description: "The branch the PR merges into (where_are_we.base)" },
-      title: { type: "string" },
-      body: { type: "string", description: "The PR description: what/why, decisions and risks, read first, verification, what remains, links" },
-      ready: { type: "boolean", description: "true: mark the existing draft ready" },
+      slug: { type: "string", description: "The work's slug; the PR's head is agent/<slug>" },
+      base: { type: "string", description: "The branch the PR merges into, usually where_are_we's base; needed to open, ignored with ready" },
+      title: { type: "string", description: "The PR title: the change in one plain line; needed to open, ignored with ready" },
+      body: { type: "string", description: "The PR description in GitHub Markdown; needed to open, ignored with ready" },
+      ready: { type: "boolean", description: "true marks the existing draft ready for review; base, title and body are then ignored" },
     },
     required: ["repo", "slug"],
     additionalProperties: false,

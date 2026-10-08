@@ -140,16 +140,20 @@ async function describe(found: Found, sessionId: string): Promise<Record<string,
 export const whereAreWe = defineTool({
   name: "where_are_we",
   description:
-    "Where this thread's work stands, read from GitHub (refs and the plan's kevin-state block; no clone). Call it first on every turn " +
-    "except the brief. Returns { slug?, repo?, branch?, base, version, docs: { design?, plan?, prompts? }, pr?, " +
-    "streams: [{ name, branch, merged, sessionId?, attempt, state }], lastCommits, state? }; " +
-    "no slug = no work found for this session/thread (then slugsInUse lists taken slugs when repo was given).",
+    "What git holds for this thread's work, read from GitHub without a clone: know instead of recall. " +
+    "Returns { slug, repo, branch, base, version, docs: { design?, plan, prompts? }, pr?: { number, draft, merged, url }, " +
+    "streams: [{ name, branch, merged, attempt, state }], lastCommits, state }. " +
+    "It finds work through a plan at .agents/work/<slug>.md whose kevin-state names your session or thread; " +
+    "otherwise no slug, and slugsInUse lists taken slugs. With no stream running it deletes the outcome subscription.",
   input: {
     type: "object",
     properties: {
-      sessionId: { type: "string", description: "Omit: your own session" },
-      threadId: { type: "string", description: "The thread id when the context gives one" },
-      repo: { type: "string", description: "owner/name, when known (it is after the brief); omitted → every granted repo is searched" },
+      sessionId: { type: "string", description: "Another lead session's id, to see the work it recorded; omitted, your own" },
+      threadId: {
+        type: "string",
+        description: "This thread's id; finds work whose kevin-state carries it, including work another session in the thread started",
+      },
+      repo: { type: "string", description: "owner/name to search, faster when known; omitted, up to 30 granted repos are searched" },
     },
     additionalProperties: false,
   },

@@ -148,13 +148,20 @@ function nextState(
 export const delegate = defineTool({
   name: "delegate",
   description:
-    "Start implementers, one session per assignment (≤7 running). Creates the outcome subscription first, then the sessions, " +
-    "records them in the plan's kevin-state block, then starts their turns. Safe to call again with the same assignments: " +
-    "it reuses what it recorded. Returns { sessions: [{ stream, attempt, sessionId }] }. Never consult or ask in a turn that delegates.",
+    "Starts one builder per assignment, each on its own computer; useful once work is clear enough to hand " +
+    "to someone who has not seen the thread. It ensures your outcome subscription, so their reports reach you as events, " +
+    "records the sessions as running in the plan's kevin-state block (creating the plan if missing), then starts them. " +
+    "Retrying the same stream and attempt reuses its recorded session. Refuses beyond 7 running. " +
+    "Returns { sessions: [{ stream, attempt, sessionId }] }.",
   input: {
     type: "object",
     properties: {
-      assignments: { type: "array", minItems: 1, items: ASSIGNMENT_SCHEMA },
+      assignments: {
+        type: "array",
+        minItems: 1,
+        items: ASSIGNMENT_SCHEMA,
+        description: "One per stream, all for the same slug and repo, each stream once",
+      },
     },
     required: ["assignments"],
     additionalProperties: false,

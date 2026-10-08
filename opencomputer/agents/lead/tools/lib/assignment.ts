@@ -27,18 +27,53 @@ const STREAM = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const ASSIGNMENT_SCHEMA = {
   type: "object",
   properties: {
-    kind: { type: "string", enum: ["build", "spike", "investigate"] },
-    slug: { type: "string", description: "The work's slug (kebab, ≤40 chars)" },
-    repo: { type: "string", description: "The code repo, owner/name" },
-    stream: { type: "string", description: "Stream name (kebab); investigate-<topic> / spike-<topic> for those kinds" },
-    branch: { type: "string", description: "build/spike: agent/<slug>--<stream> (the default); omit for investigate" },
-    base: { type: "string", description: "Branch the stream starts from: agent/<slug> for build; the default branch for investigate" },
-    attempt: { type: "integer", minimum: 1, description: "1, then +1 on every re-dispatch of the stream" },
-    files: { type: "array", items: { type: "string" }, description: "Exactly the files the stream may touch" },
-    doneWhen: { type: "string" },
-    checks: { type: "string", description: "The repo's check command" },
-    designUrl: { type: "string", description: "Link to the design section, never the content" },
-    planUrl: { type: "string", description: "Link to the plan section, never the content" },
+    kind: {
+      type: "string",
+      enum: ["build", "spike", "investigate"],
+      description:
+        "build: code on the stream's branch, to be merged; spike: code that answers a question, never merged; " +
+        "investigate: read-only, findings with file:line",
+    },
+    slug: { type: "string", description: "The work's slug (kebab-case, ≤40 characters); the same in every assignment of a call" },
+    repo: { type: "string", description: "The code repo, owner/name; the same in every assignment of a call" },
+    stream: {
+      type: "string",
+      description: "Stream name (kebab-case), unique in the call; investigate-<topic> or spike-<topic> for those kinds",
+    },
+    branch: {
+      type: "string",
+      description: "Defaults to agent/<slug>--<stream>, which is almost always right; must start with agent/<slug>--; none for investigate",
+    },
+    base: {
+      type: "string",
+      description: "The branch the builder starts from: agent/<slug> for a build (created if missing); the default branch for investigate",
+    },
+    attempt: {
+      type: "integer",
+      minimum: 1,
+      description: "1, then +1 each time the stream goes back to a builder (a fresh session); the same attempt again reuses the recorded one",
+    },
+    files: {
+      type: "array",
+      items: { type: "string" },
+      description:
+        "The paths this stream may change, a boundary the builder keeps; a good list is exact, includes the tests and shares no path " +
+        "with another stream. For investigate, the areas to read",
+    },
+    doneWhen: {
+      type: "string",
+      description:
+        "What is true when the stream is done; a good one is an outcome someone without the thread can verify from the code and " +
+        "the checks, not a list of steps. For investigate, the question to answer",
+    },
+    checks: {
+      type: "string",
+      description:
+        "The command the builder runs before reporting; a good one proves this stream from the repo root, usually the check " +
+        "`.agents/conventions.md` names, narrowed when slow. Its tail comes back in the report",
+    },
+    designUrl: { type: "string", description: "Link to the design or its section, never the content; the builder reads it instead of the thread" },
+    planUrl: { type: "string", description: "Link to this stream's section of the plan, never the content" },
   },
   required: ["kind", "slug", "repo", "stream", "base", "attempt", "files", "doneWhen", "checks"],
   additionalProperties: false,

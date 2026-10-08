@@ -12,22 +12,37 @@ import { traced } from "./lib/telemetry";
 export const commitDocument = defineTool({
   name: "commit_document",
   description:
-    "Write one document (design, plan) to its branch, commit and push it. Same repo: branch agent/<slug>. Docs repo: its default branch. " +
-    "Pass the whole file as content; with state, the plan's kevin-state block is rewritten from it; with version, the header's version: line. " +
-    "Omit content to rewrite only state/version of the existing file. Returns { sha, url }.",
+    "Writes one document (a design or a plan), commits and pushes it, so the artifact lives in git rather than in the thread. " +
+    "Returns { sha, url }: the commit and the document's link on its branch, the link a reader or a builder's assignment needs. " +
+    "Given state, it rewrites the plan's kevin-state block; given version, the header's version: line; without content, " +
+    "only those change in the existing file. Content identical to what is there makes no commit.",
   input: {
     type: "object",
     properties: {
-      repo: { type: "string", description: "owner/name of the repo the document lives in" },
-      branch: { type: "string", description: "agent/<slug>, or the docs repo's default branch" },
-      path: { type: "string", description: ".agents/design/<slug>.md or .agents/work/<slug>.md unless the conventions say otherwise" },
-      content: { type: "string", description: "The whole file" },
-      message: { type: "string", description: "The commit message" },
+      repo: { type: "string", description: "owner/name the document lives in: the code repo, or the docs repo when one is configured" },
+      branch: {
+        type: "string",
+        description: "agent/<slug> in the code repo, created from its default branch on the first write; in the docs repo, its default branch",
+      },
+      path: {
+        type: "string",
+        description: "Repo-relative; the tools find the plan only at .agents/work/<slug>.md and the design only at .agents/design/<slug>.md",
+      },
+      content: { type: "string", description: "The whole file as it should read after this commit; omit to change only state or version" },
+      message: { type: "string", description: "The commit message: what changed in the document" },
       state: {
         type: "object",
-        description: "The plan's kevin-state: { version, leadSessionId, threadId?, subscriptionId?, streams: [{ stream, attempt, sessionId, branch, state }] }",
+        description:
+          "The plan's kevin-state, replacing the whole block: { version, leadSessionId?, threadId?, subscriptionId?, " +
+          "streams: [{ stream, attempt, sessionId, branch, state }] }; leadSessionId defaults to yours. With your threadId in it, " +
+          "where_are_we finds the work from any session in the thread. A stream's state is your word (landed, merged, blocked, …); " +
+          "only running streams keep the subscription and count toward the limit",
       },
-      version: { type: "integer", minimum: 0, description: "The version number this commit carries" },
+      version: {
+        type: "integer",
+        minimum: 0,
+        description: "The artifact version this commit records (the n of v<n>); written to the header and the state, read back by where_are_we",
+      },
     },
     required: ["repo", "branch", "path", "message"],
     additionalProperties: false,

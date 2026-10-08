@@ -13,15 +13,16 @@ import { traced } from "./lib/telemetry";
 export const integrate = defineTool({
   name: "integrate",
   description:
-    "Merge stream branch agent/<slug>--<stream> into agent/<slug> (--no-ff) and push. Refuses a dirty clone. " +
-    "On a conflict nothing is merged: returns { merged: false, conflict: { stream, files, otherStream } } — never resolve it yourself. " +
-    "Returns { merged: true, sha, alreadyMerged } on success.",
+    "Merges a builder's branch agent/<slug>--<stream> into agent/<slug> with a merge commit and pushes; useful when a landed " +
+    "stream's work belongs on the branch the PR and later streams build on. Returns { merged: true, sha, alreadyMerged }; " +
+    "repeating is harmless. On a conflict nothing changes: { merged: false, conflict: { stream, files, otherStream } } names " +
+    "the files and the stream (or agent/<slug>) they collide with, what the builder's next attempt needs.",
   input: {
     type: "object",
     properties: {
       repo: { type: "string", description: "The code repo, owner/name" },
-      slug: { type: "string" },
-      stream: { type: "string" },
+      slug: { type: "string", description: "The work's slug; agent/<slug> receives the merge" },
+      stream: { type: "string", description: "The stream (kebab-case) whose branch agent/<slug>--<stream> is merged" },
     },
     required: ["repo", "slug", "stream"],
     additionalProperties: false,
