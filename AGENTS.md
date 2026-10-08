@@ -1,7 +1,7 @@
 # opencomputer-example-kevin
 
 - Layout: `opencomputer/project.ts` (project `kevin`, agents `lead`, `implementer`, `reviewer`); each agent under `opencomputer/agents/<id>/` with `agent.ts`, `connections/`, generated `process/`; the lead adds `config.ts` (project id, agent prefix, environment, `docsRepo`, `maxImplementers`) and `tools/`.
-- `process/` at the root is the one source of shared text; `npm run generate` copies it into each agent's `process/` (an agent may import only inside its own directory). Edit the source, never the copies.
+- `process/` at the root is the one source of shared text: `roles.ts` (each role's identity), the lead's `facts.ts`, `values.ts`, `boundaries.ts` and `method.ts` (the method as a skill), joined in `instructions.ts`; `implementer.ts`, `reviewer.ts` and `reports.ts` (contracts the code parses). `npm run generate` copies it into each agent's `process/` (an agent may import only inside its own directory). Edit the source, never the copies.
 - `npm run check` = `generate --check` + typecheck + tests + `opencomputer doctor`; no platform needed. Green before every commit.
 - After `opencomputer link`, update `projectId` and `agentPrefix` in the lead's `config.ts`; `test/config.test.ts` fails when they drift.
 - `npm run generate` before every deploy (`npm run deploy` does both).

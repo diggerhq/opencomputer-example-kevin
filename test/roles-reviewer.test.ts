@@ -21,7 +21,7 @@ const consult = (text: string): AgentInput => ({
   payload: { kind: "consult", hostSessionId: "3f0c2a1e-lead", questionId: "q-1" },
 });
 
-/** The lead's prompt as process/lead.ts "Consulting the reviewer" composes it. */
+/** The lead's prompt as process/method.ts "Review" describes it. */
 const prompt = (brief: Record<string, string>) =>
   ["Review request.", "```json", JSON.stringify(brief, null, 2), "```", PROMPTS_RULE, "Budget: ≤10 minutes; read and reason, run nothing."].join("\n");
 
