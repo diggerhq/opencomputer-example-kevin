@@ -65,7 +65,8 @@ test("lead: the event preface names the builder's report; the consult-answer pre
 
 test("lead: caps, so the text cannot regrow unnoticed (raising one needs a design in .agents/)", () => {
   const standing = words([ROLES.lead, FACTS, VALUES, BOUNDARIES].join("\n\n"));
-  assert.ok(standing <= 600, `identity + facts + values + boundaries: ${standing} words`);
+  // 700 since 2026-10-08: the values open with why the work is interactive (design 019 §2 "Why interactive, not autonomous").
+  assert.ok(standing <= 700, `identity + facts + values + boundaries: ${standing} words`);
   assert.ok(words(METHOD) <= 700, `method: ${words(METHOD)} words`);
 });
 
