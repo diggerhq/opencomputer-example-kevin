@@ -448,13 +448,15 @@ test("open_pr: gh pr create --draft with the body file, then deletes the subscri
 });
 
 /** A scripted GitHub for where_are_we: one repo, its agent/* refs, the plan, a PR, compares, commits. */
-function githubFor(state: object, options: { running?: boolean } = {}) {
+function githubFor(state: object, options: { running?: boolean; emptyOther?: boolean } = {}) {
   const planText = plan(state, "\n## Prompts\n\n> add CSV export\n");
   const encoded = (text: string) => ({ content: Buffer.from(text).toString("base64"), encoding: "base64" });
   return scriptGh((args) => {
     const path = args[1] ?? "";
     if (path === "installation/repositories?per_page=100") return ok({ repositories: [{ full_name: "acme/other" }, { full_name: REPO }] });
-    if (path === "repos/acme/other/git/matching-refs/heads/agent/?per_page=100") return ok([]);
+    if (path === "repos/acme/other/git/matching-refs/heads/agent/?per_page=100") {
+      return options.emptyOther ? { code: 1, stdout: "", stderr: "gh: Git Repository is empty. (HTTP 409)\n" } : ok([]);
+    }
     if (path === `repos/${REPO}`) return ok({ default_branch: "main" });
     if (path === `repos/${REPO}/git/matching-refs/heads/agent/?per_page=100`) {
       return ok([
@@ -521,6 +523,20 @@ test("where_are_we: finds the work by session id across granted repos and return
     // Another session of the same thread finds it by thread id.
     const byThread = (await runTool(whereAreWe, { repo: REPO, threadId: "1759750000.000100" }, "teammate-session")) as { slug?: string };
     assert.equal(byThread.slug, SLUG);
+  } finally {
+    gh.restore();
+    api.restore();
+  }
+});
+
+test("where_are_we: an empty granted repository is skipped, not a failure of the search (K48)", async () => {
+  const state = { version: 4, leadSessionId: LEAD_SESSION, streams: [] };
+  const gh = githubFor(state, { emptyOther: true });
+  const api = stubManagementApi();
+  try {
+    const result = (await runTool(whereAreWe, {})) as { slug?: string; repo?: string };
+    assert.equal(result.slug, SLUG);
+    assert.equal(result.repo, REPO);
   } finally {
     gh.restore();
     api.restore();

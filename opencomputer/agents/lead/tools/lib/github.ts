@@ -39,11 +39,19 @@ export async function defaultBranch(repo: string): Promise<string> {
   return data.default_branch;
 }
 
-/** Branch names under `agent/` with their head shas. */
+/**
+ * Branch names under `agent/` with their head shas. A repository with no
+ * commits has no branches: GitHub answers its refs with HTTP 409 "Git
+ * Repository is empty", which is no work, not a failure (work 040 K48: one
+ * empty granted repo used to fail every search across granted repos).
+ */
 export async function agentRefs(repo: string): Promise<Array<{ branch: string; sha: string }>> {
-  const refs = (await ghJson<Array<{ ref: string; object: { sha: string } }>>(
-    `repos/${repo}/git/matching-refs/heads/agent/?per_page=100`,
-  )) ?? [];
+  const result = await runtime.exec("gh", ["api", `repos/${repo}/git/matching-refs/heads/agent/?per_page=100`]);
+  if (result.code !== 0) {
+    if (/HTTP 404/.test(result.stderr) || /HTTP 409/.test(result.stderr) && /empty/i.test(result.stderr)) return [];
+    throw new Error(`gh api repos/${repo}/git/matching-refs failed: ${result.stderr.trim().split("\n").slice(-3).join(" ")}`);
+  }
+  const refs = JSON.parse(result.stdout) as Array<{ ref: string; object: { sha: string } }>;
   return refs.map((ref) => ({ branch: ref.ref.replace(/^refs\/heads\//, ""), sha: ref.object.sha }));
 }
 
