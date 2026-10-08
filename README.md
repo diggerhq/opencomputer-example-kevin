@@ -153,9 +153,9 @@ in your Slack workspace and GitHub repositories.
   ([template](templates/conventions.md)) to say which changes need a design,
   which can ship directly, and which checks to run. For example: API changes
   need a design; documentation fixes can go straight to building.
-- **Method and voice:** edit [`process/`](process/). These are instructions
-  and examples the model adapts to the work. `npm run generate` copies
-  this source into each agent's bundle.
+- **Method and voice:** edit [`process/`](process/): the lead's identity,
+  platform facts, values, boundaries and the method it applies when the work
+  warrants it. `npm run generate` copies this source into each agent's bundle.
 - **Models and tools:** edit each `agent.ts` and the lead's
   [`tools/`](opencomputer/agents/lead/tools/). `maxImplementers` defaults to seven.
 - **Documents elsewhere:** set `docsRepo` in `config.ts` to write documents

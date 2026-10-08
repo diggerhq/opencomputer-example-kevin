@@ -3,9 +3,8 @@ import test from "node:test";
 
 import type { AgentInput } from "@opencomputer/agent";
 
-import Lead, { TURN_ROUTER, turnKind } from "../opencomputer/agents/lead/agent";
+import Lead, { turnKind } from "../opencomputer/agents/lead/agent";
 import { leadInstructions, TOOL_NAMES } from "../opencomputer/agents/lead/process/instructions";
-import { BRIEF_TURN } from "../opencomputer/agents/lead/process/lead";
 import { render, slackMention } from "./helpers";
 
 const ALL_TOOLS = [
@@ -76,15 +75,23 @@ function dataOf(instructions: string, title: string): unknown {
   return JSON.parse(body ?? "null");
 }
 
-test("channel, first turn: the brief route is offered and needs no tool call; all tools selected", () => {
+/**
+ * The rendered text is the lead's instructions for the turn kind, then data
+ * blocks only: no router, no turn-specific instruction section.
+ */
+function assertInstructionsThenData(instructions: string, source: "channel" | "event" | "subagent", blocks: string[]): void {
+  const text = leadInstructions({ source });
+  assert.ok(instructions.startsWith(`${text}\n\n`), "the lead's text comes first");
+  const headings = instructions.slice(text.length).match(/^# .+$/gm) ?? [];
+  assert.deepEqual(headings, blocks.map((title) => `# ${title}`));
+}
+
+test("channel, a new thread: all tools selected; the instructions, then the thread line; no router", () => {
   const rendered = render(Lead, slackMention("add CSV export to the orders page"));
   assert.deepEqual(rendered.models, ["anthropic/claude-fable-5.1"]);
   assert.deepEqual(rendered.tools, ALL_TOOLS);
   assert.deepEqual(rendered.connections, BOTH_CONNECTIONS);
-  assert.ok(rendered.instructions.startsWith(TURN_ROUTER), "the router comes first");
-  assert.match(rendered.instructions, /call no tool at all \(no `where_are_we`, no shell: the brief needs no computer\)/);
-  assert.ok(rendered.instructions.endsWith(BRIEF_TURN), "the brief section closes the text");
-  assert.ok(rendered.instructions.includes(leadInstructions({ source: "channel", firstTurn: false })));
+  assertInstructionsThenData(rendered.instructions, "channel", ["Thread"]);
   assert.match(rendered.instructions, /No thread id reaches you yet/);
 });
 
@@ -92,7 +99,7 @@ test("channel, later turn: same selection; the thread id is handed to where_are_
   const rendered = render(Lead, threadReply("design"));
   assert.deepEqual(rendered.tools, ALL_TOOLS);
   assert.deepEqual(rendered.connections, BOTH_CONNECTIONS);
-  assert.match(rendered.instructions, /call `where_are_we` before anything else/);
+  assertInstructionsThenData(rendered.instructions, "channel", ["Thread"]);
   assert.match(rendered.instructions, /Thread id: `1759750000\.000100`\. Pass it to `where_are_we` as `threadId`/);
 });
 
@@ -113,7 +120,7 @@ test("event: where_are_we, integrate, commit_document, delegate (+ shell); never
   assert.deepEqual(rendered.tools, EVENT_TOOLS);
   assert.ok(!rendered.tools.includes(TOOL_NAMES.openPr) && !rendered.tools.includes(TOOL_NAMES.consult));
   assert.deepEqual(rendered.connections, BOTH_CONNECTIONS);
-  assert.ok(rendered.instructions.startsWith(leadInstructions({ source: "event", firstTurn: false })));
+  assertInstructionsThenData(rendered.instructions, "event", ["The delivered outcome, parsed"]);
   assert.deepEqual(dataOf(rendered.instructions, "The delivered outcome, parsed"), {
     sessionId: "impl-session-1",
     type: "turn.completed",
@@ -148,7 +155,7 @@ test("consult answer: all lead tools and consult; held messages first; the verdi
   );
   assert.deepEqual(rendered.tools, ALL_TOOLS);
   assert.deepEqual(rendered.connections, BOTH_CONNECTIONS);
-  assert.ok(rendered.instructions.startsWith(leadInstructions({ source: "subagent", firstTurn: false })));
+  assertInstructionsThenData(rendered.instructions, "subagent", ["Held messages (acknowledge these first)", "The reviewer's answer, parsed"]);
   assert.match(rendered.instructions, /# Held messages \(acknowledge these first\)\n- also add TSV please/);
   assert.deepEqual(dataOf(rendered.instructions, "The reviewer's answer, parsed"), {
     ...verdict,
@@ -196,6 +203,7 @@ test("a click or reply that answers the last ask is handed to the model with wha
     steering: [{ text: "keep the file name fixed", receivedAt: "2026-10-06T12:00:00Z" }],
   };
   const rendered = render(Lead, input);
+  assertInstructionsThenData(rendered.instructions, "channel", ["Thread", "This answers your question"]);
   assert.match(rendered.instructions, /# This answers your question\nChosen: `design`\./);
   assert.match(rendered.instructions, /Written before your question[^\n]*\n- keep the file name fixed/);
 });

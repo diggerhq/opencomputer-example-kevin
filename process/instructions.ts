@@ -1,75 +1,35 @@
 /**
  * The process's public interface: each agent imports this from its
- * generated `process/instructions`. The lead's render passes the turn kind;
- * the stage is read by the model from `where_are_we` (work 040 "Stage
- * detection": the render runs before any tool, so it cannot know it).
+ * generated `process/instructions`.
  *
- * Order per turn: who you are, what this turn is, the rules the platform
- * imposes, the concepts, then reference shapes last (design 019 §2
- * "Guidance, not a harness").
+ * The lead gets one text on every turn: who it is, the platform's facts,
+ * what it optimises for, its boundaries and the method it applies when the
+ * work warrants it (design 019 §2 "The model drives; the method is a
+ * skill"). A one-line preface names the turn; the render appends the turn's
+ * data after it.
  */
+import { BOUNDARIES } from "./boundaries";
+import { FACTS } from "./facts";
 import { implementerText } from "./implementer";
-import {
-  BRIEF_TURN,
-  CHANNEL_TURN_START,
-  CONSULT_ANSWER_TURN,
-  CONSULTING,
-  DELEGATION,
-  EVENT_TURN,
-  FAILURES,
-  MECHANICS,
-  
-  REPOS_AND_DOCUMENTS,
-  STAGES,
-} from "./lead";
-import { PHILOSOPHY } from "./philosophy";
+import { METHOD } from "./method";
 import { reviewerText } from "./reviewer";
 import { ROLES } from "./roles";
-import { DOCUMENT_SHAPES, SHAPES } from "./shapes";
+import { VALUES } from "./values";
 
-export { snapshotBudgets, snapshotLabels, VERSION_MARKER } from "./shapes";
 export { TOOL_NAMES } from "./reports";
 
-export type LeadInput = { source: "channel" | "event" | "subagent"; firstTurn: boolean };
+export type LeadInput = { source: "channel" | "event" | "subagent" };
 
-/** The lead's full instruction text for one turn kind. The turn-specific block comes first. */
+const PREFACE: Record<LeadInput["source"], string> = {
+  channel: "This turn: the person wrote in the thread.",
+  event: "This turn: a builder's outcome arrived through your subscription; the person did not write. The parsed report follows the instructions.",
+  subagent:
+    "This turn: the reviewer answered your consult. The parsed answer and the messages the person wrote meanwhile follow the instructions.",
+};
+
+/** The lead's instruction text for one turn kind: the preface, then the same five parts on every turn. */
 export function leadInstructions(input: LeadInput): string {
-  // work 040 "Stage detection": a channel turn with no prior lead message is the brief; no where_are_we, no computer
-  if (input.source === "channel" && input.firstTurn) {
-    return [ROLES.lead, BRIEF_TURN, MECHANICS, PHILOSOPHY, SHAPES].join("\n\n");
-  }
-  // 019 §11 sequence step 6: event turns record and merge only
-  if (input.source === "event") {
-    return [ROLES.lead, EVENT_TURN, MECHANICS, FAILURES, DELEGATION, REPOS_AND_DOCUMENTS].join("\n\n");
-  }
-  // 019 §11 review loop: the consult answer arrives as a subagent input
-  if (input.source === "subagent") {
-    return [
-      ROLES.lead,
-      CONSULT_ANSWER_TURN,
-      MECHANICS,
-      FAILURES,
-      CONSULTING,
-      DELEGATION,
-      REPOS_AND_DOCUMENTS,
-      PHILOSOPHY,
-      SHAPES,
-      DOCUMENT_SHAPES,
-    ].join("\n\n");
-  }
-  return [
-    ROLES.lead,
-    CHANNEL_TURN_START,
-    STAGES,
-    MECHANICS,
-    FAILURES,
-    DELEGATION,
-    CONSULTING,
-    REPOS_AND_DOCUMENTS,
-    PHILOSOPHY,
-    SHAPES,
-    DOCUMENT_SHAPES,
-  ].join("\n\n");
+  return [PREFACE[input.source], ROLES.lead, FACTS, VALUES, BOUNDARIES, METHOD].join("\n\n");
 }
 
 /** The implementer's instruction text; the assignment arrives as the turn payload. */
