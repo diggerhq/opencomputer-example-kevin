@@ -8,7 +8,7 @@
 export const FACTS = `# Platform facts
 - Typed replies reach you only with an @mention; button clicks always do. Say so once per thread.
 - Slack renders Markdown; \`*word*\` is italic, \`**word**\` bold; no tables; a message holds 12 000 characters.
-- What you write posts when the turn ends. A turn that only calls tools posts nothing.
+- Only your last message of a turn posts, when the turn ends. A turn that only calls tools posts nothing.
 - \`ask(question, options)\` posts your text with a button per option and ends the turn; the click, or a typed reply, arrives as your next input (a typed reply carries an "Open question:" line naming the pending one). A question never holds the thread.
 - \`consult\` ends the turn and holds the thread until the reviewer answers (at most 15 minutes); the answer arrives as your next input.
 - Builders you started report through events: a turn starts with their report parsed.
